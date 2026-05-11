@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bareke · Login de prueba</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Bareke · Login</title>
+    <!-- Solo una carga de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
@@ -127,86 +128,129 @@
 </div>
 
 <script>
-    // Configuración de Supabase
-    const SUPABASE_URL = "https://xgnwcurixdsntafchbmn.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnbndjdXJpeGRzbnRhZmNoYm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDY3ODUsImV4cCI6MjA5NDA4Mjc4NX0.sW-fYAUPMVUDL_ztX8Wu6JtChha5-sUCHIUwKFWGnAY";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    (function() {
+        // Esperamos a que el DOM cargue completamente
+        document.addEventListener("DOMContentLoaded", function() {
+            // Configuración de Supabase (única vez)
+            const SUPABASE_URL = "https://xgnwcurixdsntafchbmn.supabase.co";
+            const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnbndjdXJpeGRzbnRhZmNoYm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDY3ODUsImV4cCI6MjA5NDA4Mjc4NX0.sW-fYAUPMVUDL_ztX8Wu6JtChha5-sUCHIUwKFWGnAY";
+            // Verificar si ya existe la variable global para evitar duplicados
+            if (typeof window._supabaseClient === 'undefined') {
+                window._supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            }
+            const supabase = window._supabaseClient;
 
-    // Esperar a que el DOM esté listo
-    document.addEventListener("DOMContentLoaded", () => {
-        // ------- Botones de ojo -------
-        document.querySelectorAll('.toggle-password').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetId = this.getAttribute('data-target');
-                const input = document.getElementById(targetId);
-                if (input) {
-                    input.type = input.type === "password" ? "text" : "password";
-                }
-            });
-        });
-
-        // ------- Mostrar/ocultar selector de turno según usuario -------
-        const usernameInput = document.getElementById("loginUsername");
-        const shiftDiv = document.getElementById("shiftSelectorDiv");
-        usernameInput.addEventListener("input", () => {
-            const isAdmin = usernameInput.value.toLowerCase() === "admin";
-            shiftDiv.style.display = isAdmin ? "none" : "block";
-        });
-
-        // ------- Lógica de selección de turno -------
-        let selectedShift = null;
-        const morningBtn = document.getElementById("shiftMorningBtn");
-        const afternoonBtn = document.getElementById("shiftAfternoonBtn");
-        function updateButtons() {
-            morningBtn.classList.toggle("selected", selectedShift === "manana");
-            afternoonBtn.classList.toggle("selected", selectedShift === "tarde");
-        }
-        morningBtn.onclick = () => { selectedShift = "manana"; updateButtons(); };
-        afternoonBtn.onclick = () => { selectedShift = "tarde"; updateButtons(); };
-
-        // ------- Botón de login -------
-        document.getElementById("loginBtn").onclick = async () => {
-            const username = usernameInput.value.trim().toLowerCase();
-            const password = document.getElementById("loginPassword").value;
+            // Elementos del DOM
+            const usernameInput = document.getElementById("loginUsername");
+            const passwordInput = document.getElementById("loginPassword");
+            const loginBtn = document.getElementById("loginBtn");
             const errorDiv = document.getElementById("loginError");
-            errorDiv.innerText = "";
+            const shiftDiv = document.getElementById("shiftSelectorDiv");
+            const morningBtn = document.getElementById("shiftMorningBtn");
+            const afternoonBtn = document.getElementById("shiftAfternoonBtn");
 
-            if (!username || !password) {
-                errorDiv.innerText = "❌ Ingresa usuario y contraseña";
-                return;
-            }
+            // Variables de turno
+            let selectedShift = null;
 
-            // Consultar usuario en Supabase
-            const { data, error } = await supabase.from('usuarios').select('*').eq('id', username);
-            if (error) {
-                console.error("Error de conexión:", error);
-                errorDiv.innerText = "❌ Error de conexión con la base de datos";
-                return;
-            }
-            if (!data || data.length === 0) {
-                errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
-                return;
-            }
-            const user = data[0];
-            if (user.password !== password) {
-                errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
-                return;
+            // Función para actualizar estilos de los botones de turno
+            function updateShiftButtons() {
+                morningBtn.classList.toggle("selected", selectedShift === "manana");
+                afternoonBtn.classList.toggle("selected", selectedShift === "tarde");
             }
 
-            if (user.tipo === "admin") {
-                alert("Login exitoso como ADMINISTRADOR. (Aquí cargaría el dashboard)");
-                // Aquí redirigirías al dashboard
-            } else {
-                if (!selectedShift) {
-                    errorDiv.innerText = "❌ Debes seleccionar un turno (Mañana o Tarde)";
-                    return;
-                }
-                alert(`Login exitoso como EMPLEADO: ${user.nombre}\nTurno: ${selectedShift === "manana" ? "Mañana" : "Tarde"}`);
-                // Aquí redirigirías al dashboard
+            // Eventos para los botones de turno
+            if (morningBtn) {
+                morningBtn.onclick = function() {
+                    selectedShift = "manana";
+                    updateShiftButtons();
+                };
             }
-        };
-    });
+            if (afternoonBtn) {
+                afternoonBtn.onclick = function() {
+                    selectedShift = "tarde";
+                    updateShiftButtons();
+                };
+            }
+
+            // Evento para mostrar/ocultar selector según usuario
+            if (usernameInput) {
+                usernameInput.addEventListener("input", function() {
+                    const isAdmin = this.value.trim().toLowerCase() === "admin";
+                    shiftDiv.style.display = isAdmin ? "none" : "block";
+                    // Si se cambia a admin, reseteamos el turno seleccionado
+                    if (isAdmin) {
+                        selectedShift = null;
+                        updateShiftButtons();
+                    }
+                });
+            }
+
+            // Botones de mostrar/ocultar contraseña
+            document.querySelectorAll('.toggle-password').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    if (input) {
+                        input.type = input.type === "password" ? "text" : "password";
+                    }
+                });
+            });
+
+            // Evento de login
+            if (loginBtn) {
+                loginBtn.onclick = async function() {
+                    const username = usernameInput.value.trim().toLowerCase();
+                    const password = passwordInput.value;
+                    errorDiv.innerText = "";
+
+                    if (!username || !password) {
+                        errorDiv.innerText = "❌ Ingresa usuario y contraseña";
+                        return;
+                    }
+
+                    try {
+                        const { data, error } = await supabase
+                            .from('usuarios')
+                            .select('*')
+                            .eq('id', username);
+
+                        if (error) {
+                            console.error("Error Supabase:", error);
+                            errorDiv.innerText = "❌ Error de conexión con la base de datos";
+                            return;
+                        }
+
+                        if (!data || data.length === 0) {
+                            errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
+                            return;
+                        }
+
+                        const user = data[0];
+                        if (user.password !== password) {
+                            errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
+                            return;
+                        }
+
+                        if (user.tipo === "admin") {
+                            alert("Bienvenido Administrador. Aquí cargará el dashboard completo.");
+                            // Aquí rediriges al panel principal
+                        } else {
+                            if (!selectedShift) {
+                                errorDiv.innerText = "❌ Debes seleccionar un turno (Mañana o Tarde)";
+                                return;
+                            }
+                            alert(`Bienvenido ${user.nombre}. Turno: ${selectedShift === "manana" ? "Mañana" : "Tarde"}. Aquí cargará el dashboard.`);
+                            // Aquí rediriges al panel principal
+                        }
+                    } catch (err) {
+                        console.error("Error inesperado:", err);
+                        errorDiv.innerText = "❌ Error inesperado. Revisa la consola.";
+                    }
+                };
+            }
+        });
+    })();
 </script>
 </body>
 </html>
