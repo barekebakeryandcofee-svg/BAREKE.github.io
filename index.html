@@ -3,13 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Bareke · Panadería & Café · Dashboard Completo</title>
+    <title>Bareke · Panadería & Café · Sistema Completo</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif; }
         body { background: linear-gradient(145deg, #f8efde 0%, #f0e0c8 100%); min-height: 100vh; padding: 20px; }
-        /* Pantalla login */
         .login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #2a2418; display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .login-card { background: #fffaf2; border-radius: 60px; padding: 40px 30px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 30px 40px rgba(0,0,0,0.3); }
         .login-card h2 { font-size: 2.8rem; background: linear-gradient(135deg, #b97f44, #5a2e12); background-clip: text; -webkit-background-clip: text; color: transparent; }
@@ -21,7 +20,6 @@
         .shift-selector { margin: 15px 0; display: flex; gap: 12px; }
         .shift-btn { flex: 1; padding: 12px; background: #f4e5d4; border: none; border-radius: 40px; cursor: pointer; font-weight: bold; }
         .shift-btn.selected { background: #c27e3a; color: white; }
-        /* Dashboard */
         .dashboard { max-width: 1400px; margin: 0 auto; }
         .hero { background: #ffffffd9; border-radius: 50px; padding: 16px 30px; margin-bottom: 25px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; backdrop-filter: blur(4px); }
         .logo-area { display: flex; align-items: baseline; gap: 15px; }
@@ -64,29 +62,29 @@
 </head>
 <body>
 
-<!-- PANTALLA LOGIN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <h2>BAREKE</h2>
         <div class="brand-sub">☕ bakery & coffee 🥐</div>
-        <div class="input-group"><input type="text" id="loginUsername" placeholder="Usuario" autocomplete="off"></div>
+        <div class="input-group">
+            <input type="text" id="loginUsername" placeholder="Usuario" autocomplete="off">
+        </div>
         <div class="input-group">
             <input type="password" id="loginPassword" placeholder="Contraseña">
             <button class="toggle-password" data-target="loginPassword">👁️</button>
         </div>
         <div id="shiftSelectorDiv" style="display: none;">
-            <p>Selecciona tu turno de hoy:</p>
+            <p style="margin: 8px 0;">Selecciona tu turno de hoy:</p>
             <div class="shift-selector">
                 <button id="shiftMorningBtn" class="shift-btn">🌅 MAÑANA</button>
                 <button id="shiftAfternoonBtn" class="shift-btn">🌆 TARDE</button>
             </div>
         </div>
         <button class="login-btn" id="loginBtn">INGRESAR</button>
-        <div id="loginError" style="color:#b34e3a; margin-top: 12px;"></div>
+        <div id="loginError" style="color:#b34e3a; margin-top: 12px; font-size: 14px;"></div>
     </div>
 </div>
 
-<!-- APLICACIÓN PRINCIPAL -->
 <div id="mainApp" style="display: none;">
     <div class="dashboard">
         <div class="hero">
@@ -100,252 +98,422 @@
             <div class="stat-card"><div class="stat-title">💳 VENTAS POR NEQUI</div><div class="stat-value" id="totalNequiHoy">$0</div></div>
             <div class="stat-card"><div class="stat-title">📉 GASTOS HOY</div><div class="stat-value" id="totalGastosHoy">$0</div></div>
         </div>
+
         <div class="sales-layout">
             <div class="pos-panel">
                 <h2>🛒 PUNTO DE VENTA (POS)</h2>
                 <input type="text" id="productSearch" class="search-box" placeholder="🔍 Buscar producto...">
-                <div style="display: flex; gap: 10px;"><button id="btnQuickAdd1" class="btn-primary" style="background:#2f8b46;">+1 Rápido</button><button id="btnQuickAdd2" class="btn-primary" style="background:#2f8b46;">+2 Rápido</button></div>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <button id="btnQuickAdd1" class="btn-primary" style="background:#2f8b46;">+1 Rápido</button>
+                    <button id="btnQuickAdd2" class="btn-primary" style="background:#2f8b46;">+2 Rápido</button>
+                </div>
                 <div class="pos-buttons" id="posButtonsContainer"></div>
                 <div id="productListPOS" class="product-list-pos"></div>
             </div>
+
             <div class="cart-panel">
                 <h2 id="panelTurnoTitulo">🛒 CARRITO DE VENTAS</h2>
-                <div id="cartContainer" style="min-height:150px; max-height:300px; overflow-y:auto;"></div>
+                <div id="cartContainer" style="min-height: 150px; max-height: 300px; overflow-y: auto; margin-bottom: 15px;"></div>
                 <div class="cart-total">Total: <span id="cartTotal">$0</span></div>
-                <div class="payment-group" style="background:#f3e5d4; border-radius:40px; padding:12px; margin:10px 0;">
+                <div class="payment-group" style="background:#f3e5d4; border-radius: 40px; padding: 12px; margin: 10px 0;">
                     <label>💵 Método de pago:</label>
-                    <div><label><input type="radio" name="metodoPagoCarrito" value="efectivo" checked> Efectivo</label> <label><input type="radio" name="metodoPagoCarrito" value="nequi"> Nequi</label></div>
+                    <div class="radio-group"><label><input type="radio" name="metodoPagoCarrito" value="efectivo" checked> Efectivo</label><label><input type="radio" name="metodoPagoCarrito" value="nequi"> Nequi</label></div>
                 </div>
                 <div id="efectivoSection"><label>💸 Monto recibido (COP)</label><input type="number" id="montoRecibido" placeholder="0"><div id="cambioDisplay" class="change-display">💰 Cambio: $0</div></div>
                 <button id="btnConfirmarVenta" class="btn-primary">✅ CONFIRMAR VENTA</button>
                 <button id="btnLimpiarCarrito" class="btn-primary btn-secondary">🗑️ Limpiar carrito</button>
-                <hr><h3>🧾 Gastos de mi turno</h3>
-                <input type="text" id="gastoConcepto" placeholder="Concepto (ej. harina)"><input type="number" id="gastoValor" placeholder="Valor COP"><button id="btnAgregarGasto" class="btn-primary">➕ AGREGAR GASTO</button>
-                <div id="gastosTurnoList" style="background:#f3e5d4; border-radius:25px; padding:12px; margin-top:12px;"></div>
-                <div style="background:#e4cfb5; border-radius:25px; padding:12px; margin-top:12px;"><strong>📊 Mi aporte neto:</strong> <span id="miAporteNeto">$0</span><br><strong>💳 Nequi en mi turno:</strong> <span id="miNequiTotal">$0</span></div>
+                <hr style="margin: 18px 0;">
+                <h3>🧾 Gastos de mi turno</h3>
+                <input type="text" id="gastoConcepto" placeholder="Concepto (ej. harina)"><input type="number" id="gastoValor" placeholder="Valor COP">
+                <button id="btnAgregarGasto" class="btn-primary">➕ AGREGAR GASTO</button>
+                <div id="gastosTurnoList" style="background:#f3e5d4; border-radius: 25px; padding: 12px; margin-top: 12px;"></div>
+                <div style="background:#e4cfb5; border-radius: 25px; padding: 12px; margin-top: 12px;">
+                    <strong>📊 Mi aporte neto:</strong> <span id="miAporteNeto">$0</span><br>
+                    <strong>💳 Nequi en mi turno:</strong> <span id="miNequiTotal">$0</span>
+                </div>
             </div>
         </div>
+
         <div id="adminReports" class="admin-section" style="display: none;">
             <h2>📊 REPORTES Y ANÁLISIS</h2>
-            <div class="filter-group"><input type="date" id="filterFechaDesde"><input type="date" id="filterFechaHasta"><select id="filterEmpleado"><option value="">Todos los empleados</option></select><select id="filterTurno"><option value="">Todos los turnos</option><option value="mañana">Mañana</option><option value="tarde">Tarde</option></select><button id="btnAplicarFiltros" class="btn-primary" style="width:auto;">Filtrar</button></div>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;"><button id="btnExportCSV" class="btn-primary">📎 Exportar CSV</button><button id="btnPrintPDF" class="btn-primary">🖨️ Reportes PDF</button><button id="btnBackupManual" class="btn-primary">💾 Backup manual</button></div>
-            <div style="display:flex; flex-wrap:wrap; gap:20px; margin-top:15px;"><div style="flex:2;"><canvas id="ventasChart" style="max-height:250px;"></canvas></div><div style="flex:1;"><div id="topProductosList" style="background:#f7ecdd; border-radius:25px; padding:12px;"></div></div><div style="flex:1;"><div id="rankingEmpleadosList" style="background:#f7ecdd; border-radius:25px; padding:12px;"></div></div></div>
+            <div class="filter-group"><input type="date" id="filterFechaDesde" placeholder="Desde"><input type="date" id="filterFechaHasta" placeholder="Hasta"><select id="filterEmpleado"><option value="">Todos los empleados</option></select><select id="filterTurno"><option value="">Todos los turnos</option><option value="mañana">Mañana</option><option value="tarde">Tarde</option></select><button id="btnAplicarFiltros" class="btn-primary" style="width: auto; padding: 10px 20px;">Filtrar</button></div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;"><button id="btnExportCSV" class="btn-primary">📎 Exportar reportes a CSV</button><button id="btnPrintPDF" class="btn-primary">🖨️ Reportes para PDF/Imprimir</button><button id="btnBackupManual" class="btn-primary">💾 Backup manual</button></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;"><div style="flex: 2; min-width: 280px;"><h3>📈 Ventas (con filtros)</h3><canvas id="ventasChart" width="400" height="200" style="max-height: 250px;"></canvas></div><div style="flex: 1; min-width: 250px;"><h3>🔥 Productos más vendidos</h3><div id="topProductosList" style="background: #f7ecdd; border-radius: 25px; padding: 12px;"></div></div><div style="flex: 1; min-width: 250px;"><h3>🏆 Ranking empleados</h3><div id="rankingEmpleadosList" style="background: #f7ecdd; border-radius: 25px; padding: 12px;"></div></div></div>
         </div>
+
         <div id="adminPanel" class="admin-section" style="display: none;">
             <h2>⚙️ ADMINISTRACIÓN</h2>
-            <div style="display:flex; gap:15px; flex-wrap:wrap;"><button id="btnNuevoDia" class="btn-primary btn-danger">🌙 NUEVO DÍA</button><button id="btnExportar" class="btn-primary">💾 Respaldar sistema</button><button id="btnImportar" class="btn-primary">📂 Cargar respaldo</button><input type="file" id="importFile" style="display:none;" accept=".json"></div>
-            <div class="admin-section" style="margin-bottom:20px; background:#f0e0c8;"><h3>👑 Editar perfil de administrador</h3><div style="display:flex; flex-wrap:wrap; gap:10px;"><input type="text" id="adminNewUsername" placeholder="Nuevo usuario"><input type="text" id="adminNewDisplayName" placeholder="Nombre"><div class="input-group"><input type="password" id="adminNewPassword" placeholder="Nueva contraseña"><button class="toggle-password" data-target="adminNewPassword">👁️</button></div><div class="input-group"><input type="password" id="adminConfirmPassword" placeholder="Confirmar"><button class="toggle-password" data-target="adminConfirmPassword">👁️</button></div><button id="btnSaveAdminProfile" class="btn-primary">Guardar</button></div><div id="adminProfileMsg" style="font-size:12px;"></div></div>
-            <div style="display:flex; flex-wrap:wrap; gap:20px;"><div style="flex:1;"><h3>➕ Crear empleado</h3><input type="text" id="newUsername" placeholder="Usuario"><input type="text" id="newFullName" placeholder="Nombre completo"><div class="input-group"><input type="password" id="newPassword" placeholder="Contraseña"><button class="toggle-password" data-target="newPassword">👁️</button></div><button id="btnCreateUser" class="btn-primary">Crear</button></div><div style="flex:1;"><h3>🗑️ Eliminar empleado</h3><div id="usersList" class="user-list"></div></div><div style="flex:1;"><h3>💰 Caja / Productos</h3><input type="number" id="adminSetCaja" placeholder="Modificar caja"><button id="btnModificarCaja" class="btn-primary">Actualizar caja</button><input type="text" id="newProdNombre" placeholder="Nuevo producto"><input type="number" id="newProdPrecio" placeholder="Precio"><input type="number" id="newProdStock" placeholder="Stock"><button id="btnAgregarProducto" class="btn-primary">Agregar</button></div></div>
-            <div id="productosEditables" class="admin-section" style="margin-top:15px;"><h3>📦 Editar productos</h3><div id="listaProductosEditar"></div></div>
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;"><button id="btnNuevoDia" class="btn-primary btn-danger">🌙 NUEVO DÍA</button><button id="btnExportar" class="btn-primary">💾 Respaldar sistema</button><button id="btnImportar" class="btn-primary">📂 Cargar respaldo</button><input type="file" id="importFile" style="display: none;" accept=".json"></div>
+            <div class="admin-section" style="margin-bottom: 20px; background: #f0e0c8;"><h3>👑 Editar perfil de administrador</h3><div style="display: flex; flex-wrap: wrap; gap: 10px;"><div style="flex:1"><input type="text" id="adminNewUsername" placeholder="Nuevo usuario"></div><div style="flex:1"><input type="text" id="adminNewDisplayName" placeholder="Nombre mostrado"></div><div style="flex:1"><div class="input-group"><input type="password" id="adminNewPassword" placeholder="Nueva contraseña"><button class="toggle-password" data-target="adminNewPassword">👁️</button></div></div><div style="flex:1"><div class="input-group"><input type="password" id="adminConfirmPassword" placeholder="Confirmar"><button class="toggle-password" data-target="adminConfirmPassword">👁️</button></div></div><div style="flex:1"><button id="btnSaveAdminProfile" class="btn-primary">Guardar</button></div></div><div id="adminProfileMsg" style="font-size: 12px; margin-top: 8px;"></div></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px;"><div style="flex:1"><h3>➕ Crear empleado</h3><input type="text" id="newUsername" placeholder="Usuario"><input type="text" id="newFullName" placeholder="Nombre completo"><div class="input-group"><input type="password" id="newPassword" placeholder="Contraseña"><button class="toggle-password" data-target="newPassword">👁️</button></div><button id="btnCreateUser" class="btn-primary">Crear</button></div><div style="flex:1"><h3>🗑️ Eliminar empleado</h3><div id="usersList" class="user-list"></div></div><div style="flex:1"><h3>💰 Caja / Productos</h3><input type="number" id="adminSetCaja" placeholder="Modificar caja"><button id="btnModificarCaja" class="btn-primary">Actualizar caja</button><input type="text" id="newProdNombre" placeholder="Nuevo producto (ej. 🥐 Croissant)"><input type="number" id="newProdPrecio" placeholder="Precio"><input type="number" id="newProdStock" placeholder="Stock"><button id="btnAgregarProducto" class="btn-primary">Agregar producto</button></div></div>
+            <div id="productosEditables" class="admin-section" style="margin-top:15px;"><h3>📦 Editar productos existentes</h3><div id="listaProductosEditar"></div></div>
         </div>
     </div>
 </div>
-<div id="editProductModal" class="modal"><div class="modal-content"><h3>✏️ Editar producto</h3><input type="text" id="editProductId" hidden><label>Nombre con emoji</label><input type="text" id="editProductNombre"><label>Precio COP</label><input type="number" id="editProductPrecio"><label>Stock</label><input type="number" id="editProductStock"><div style="display:flex; gap:10px; margin-top:15px;"><button id="btnSaveEdit" class="btn-primary">Guardar</button><button id="btnCancelEdit" class="btn-primary btn-secondary">Cancelar</button></div></div></div>
+
+<div id="editProductModal" class="modal"><div class="modal-content"><h3>✏️ Editar producto</h3><input type="text" id="editProductId" hidden><label>Nombre (con emoji)</label><input type="text" id="editProductNombre"><label>Precio (COP)</label><input type="number" id="editProductPrecio" step="100"><label>Stock</label><input type="number" id="editProductStock" step="1"><div style="display: flex; gap: 10px; margin-top: 15px;"><button id="btnSaveEdit" class="btn-primary">Guardar</button><button id="btnCancelEdit" class="btn-primary btn-secondary">Cancelar</button></div></div></div>
 
 <script>
-    // Configuración de Supabase (única declaración)
-    const supabaseClient = window.supabase.createClient(
-        "https://xgnwcurixdsntafchbmn.supabase.co",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnbndjdXJpeGRzbnRhZmNoYm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDY3ODUsImV4cCI6MjA5NDA4Mjc4NX0.sW-fYAUPMVUDL_ztX8Wu6JtChha5-sUCHIUwKFWGnAY"
-    );
+    // CONFIGURACIÓN SUPABASE
+    const SUPABASE_URL = "https://xgnwcurixdsntafchbmn.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnbndjdXJpeGRzbnRhZmNoYm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDY3ODUsImV4cCI6MjA5NDA4Mjc4NX0.sW-fYAUPMVUDL_ztX8Wu6JtChha5-sUCHIUwKFWGnAY";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Variables globales
     let currentUser = null;
     let currentShift = null;
     let cart = [];
     let inventario = [];
-    let cajaTotal = 280000;
+    let cajaTotal = 0;
     let turnoManana = { empleado: null, ventas: [], gastos: [] };
     let turnoTarde = { empleado: null, ventas: [], gastos: [] };
     let ventasDiariasHistorial = [];
     let chartInstance = null;
 
-    function formatearCOP(v) { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(v); }
-    function mostrarToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.cssText = 'position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:#2c1b12; color:#ffefcf; padding:10px 24px; border-radius:40px; z-index:9999'; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
+    document.addEventListener("DOMContentLoaded", () => {
+        // Botones de ojo
+        document.querySelectorAll('.toggle-password').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('data-target');
+                const input = document.getElementById(targetId);
+                if (input) input.type = input.type === "password" ? "text" : "password";
+            });
+        });
 
-    async function cargarDatos() {
+        // Mostrar/ocultar selector de turno al escribir en usuario
+        const usernameInput = document.getElementById("loginUsername");
+        const shiftDiv = document.getElementById("shiftSelectorDiv");
+        usernameInput.addEventListener("input", () => {
+            shiftDiv.style.display = usernameInput.value.toLowerCase() === "admin" ? "none" : "block";
+        });
+
+        // Lógica de turno
+        let selectedShift = null;
+        const morningBtn = document.getElementById("shiftMorningBtn");
+        const afternoonBtn = document.getElementById("shiftAfternoonBtn");
+        const updateShiftBtns = () => {
+            morningBtn.classList.toggle("selected", selectedShift === "manana");
+            afternoonBtn.classList.toggle("selected", selectedShift === "tarde");
+        };
+        morningBtn.onclick = () => { selectedShift = "manana"; updateShiftBtns(); };
+        afternoonBtn.onclick = () => { selectedShift = "tarde"; updateShiftBtns(); };
+
+        // Login
+        document.getElementById("loginBtn").onclick = async () => {
+            const username = usernameInput.value.trim().toLowerCase();
+            const password = document.getElementById("loginPassword").value;
+            const errorDiv = document.getElementById("loginError");
+            errorDiv.innerText = "";
+            if (!username || !password) { errorDiv.innerText = "❌ Ingresa usuario y contraseña"; return; }
+            const { data, error } = await supabase.from('usuarios').select('*').eq('id', username);
+            if (error || !data || data.length === 0) { errorDiv.innerText = "❌ Usuario o contraseña incorrectos"; return; }
+            const user = data[0];
+            if (user.password !== password) { errorDiv.innerText = "❌ Usuario o contraseña incorrectos"; return; }
+            if (user.tipo === "admin") {
+                currentUser = { tipo: "admin", nombre: user.nombre, id: username };
+                currentShift = null;
+                document.getElementById("loginScreen").style.display = "none";
+                document.getElementById("mainApp").style.display = "block";
+                document.getElementById("userStatusBadge").innerHTML = "👑 Admin · Control total";
+                await cargarDatosSupabase();
+                actualizarUI();
+            } else {
+                if (!selectedShift) { errorDiv.innerText = "❌ Selecciona un turno (Mañana o Tarde)"; return; }
+                await supabase.from('turnos').upsert({ id: selectedShift, empleado: user.nombre, ultima_actualizacion: new Date().toISOString() });
+                currentUser = { tipo: "empleado", nombre: user.nombre, id: username };
+                currentShift = selectedShift;
+                document.getElementById("loginScreen").style.display = "none";
+                document.getElementById("mainApp").style.display = "block";
+                document.getElementById("userStatusBadge").innerHTML = `${user.nombre} · ${selectedShift === "manana" ? "🌅 Mañana" : "🌆 Tarde"}`;
+                await cargarDatosSupabase();
+                actualizarUI();
+            }
+        };
+
+        // Cierre de sesión: limpia campos y recarga
+        document.getElementById("logoutBtn").onclick = () => {
+            currentUser = null;
+            currentShift = null;
+            cart = [];
+            document.getElementById("loginScreen").style.display = "flex";
+            document.getElementById("mainApp").style.display = "none";
+            document.getElementById("loginUsername").value = "";
+            document.getElementById("loginPassword").value = "";
+            document.getElementById("loginError").innerText = "";
+            document.getElementById("shiftSelectorDiv").style.display = "none";
+            if (morningBtn) morningBtn.classList.remove("selected");
+            if (afternoonBtn) afternoonBtn.classList.remove("selected");
+            selectedShift = null;
+            actualizarCarritoUI();
+        };
+
+        // Eventos principales del carrito y ventas (se asignan después)
+        document.getElementById("btnConfirmarVenta").onclick = confirmarVenta;
+        document.getElementById("btnLimpiarCarrito").onclick = () => { cart = []; actualizarCarritoUI(); };
+        document.getElementById("btnAgregarGasto").onclick = async () => {
+            const concepto = document.getElementById("gastoConcepto").value;
+            const valor = parseInt(document.getElementById("gastoValor").value);
+            if (concepto && valor) await registrarGasto(concepto, valor);
+            document.getElementById("gastoConcepto").value = "";
+            document.getElementById("gastoValor").value = "";
+        };
+        document.getElementById("montoRecibido").addEventListener("input", calcularCambio);
+        document.querySelectorAll('input[name="metodoPagoCarrito"]').forEach(r => r.addEventListener("change", calcularCambio));
+        document.getElementById("productSearch").addEventListener("input", renderPOS);
+        document.getElementById("btnQuickAdd1").onclick = () => { const sel = document.getElementById("cartProductSelect"); if(sel && sel.value) agregarAlCarrito(parseInt(sel.value), 1); };
+        document.getElementById("btnQuickAdd2").onclick = () => { const sel = document.getElementById("cartProductSelect"); if(sel && sel.value) agregarAlCarrito(parseInt(sel.value), 2); };
+        
+        // Admin event listeners se asignan dentro de actualizarUI (para evitar null)
+    });
+
+    async function cargarDatosSupabase() {
         try {
-            const { data: prod } = await supabaseClient.from('productos').select('*');
-            inventario = prod || [];
-            const { data: caja } = await supabaseClient.from('caja').select('total').order('id', { ascending: false }).limit(1);
-            cajaTotal = caja?.[0]?.total || 280000;
-            const { data: turnos } = await supabaseClient.from('turnos').select('*');
-            turnoManana.empleado = turnos?.find(t => t.id === 'manana')?.empleado || null;
-            turnoTarde.empleado = turnos?.find(t => t.id === 'tarde')?.empleado || null;
+            const { data: productos } = await supabase.from('productos').select('*');
+            inventario = productos || [];
+            const { data: cajaData } = await supabase.from('caja').select('total').order('id', { ascending: false }).limit(1);
+            cajaTotal = (cajaData && cajaData[0]) ? cajaData[0].total : 280000;
+            const { data: turnosData } = await supabase.from('turnos').select('*');
+            turnoManana.empleado = turnosData?.find(t => t.id === 'manana')?.empleado || null;
+            turnoTarde.empleado = turnosData?.find(t => t.id === 'tarde')?.empleado || null;
             const hoy = new Date().toISOString().slice(0,10);
-            const { data: ventasHoy } = await supabaseClient.from('ventas').select('*').eq('fecha', hoy);
+            const { data: ventasHoy } = await supabase.from('ventas').select('*').eq('fecha', hoy);
             turnoManana.ventas = ventasHoy?.filter(v => v.turno_id === 'manana') || [];
             turnoTarde.ventas = ventasHoy?.filter(v => v.turno_id === 'tarde') || [];
-            const { data: gastosHoy } = await supabaseClient.from('gastos').select('*').eq('fecha', hoy);
+            const { data: gastosHoy } = await supabase.from('gastos').select('*').eq('fecha', hoy);
             turnoManana.gastos = gastosHoy?.filter(g => g.turno_id === 'manana') || [];
             turnoTarde.gastos = gastosHoy?.filter(g => g.turno_id === 'tarde') || [];
-            const { data: hist } = await supabaseClient.from('historial_ventas').select('*').order('fecha', { ascending: true }).limit(7);
-            ventasDiariasHistorial = hist || [];
-        } catch(e) { console.error(e); mostrarToast("Error cargando datos"); }
-        actualizarUI();
+            const { data: historial } = await supabase.from('historial_ventas').select('*').order('fecha', { ascending: true }).limit(7);
+            ventasDiariasHistorial = historial || [];
+        } catch(e) { console.error(e); mostrarToast("Error de conexión"); }
     }
 
-    async function guardarVenta(venta, turnoId) { await supabaseClient.from('ventas').insert({ turno_id: turnoId, productos: venta.productos, total: venta.total, metodo_pago: venta.metodoPago, hora: venta.hora, empleado: venta.empleado, fecha: venta.fecha }); }
-    async function guardarGasto(gasto, turnoId) { await supabaseClient.from('gastos').insert({ turno_id: turnoId, concepto: gasto.concepto, valor: gasto.valor, hora: gasto.hora, empleado: gasto.empleado, fecha: gasto.fecha }); }
-    async function actualizarProducto(p) { await supabaseClient.from('productos').update({ nombre: p.nombre, precio: p.precio, cantidad: p.cantidad }).eq('id', p.id); }
-    async function guardarCaja() { await supabaseClient.from('caja').insert({ total: cajaTotal }); }
-    async function agregarProducto(nombre, precio, cantidad) { await supabaseClient.from('productos').insert({ nombre, precio, cantidad }); }
-    async function eliminarProducto(id) { await supabaseClient.from('productos').delete().eq('id', id); }
+    async function guardarCaja() { await supabase.from('caja').insert({ total: cajaTotal }); }
+    async function guardarVenta(venta, turnoId) { await supabase.from('ventas').insert({ turno_id: turnoId, productos: venta.productos, total: venta.total, metodo_pago: venta.metodoPago, hora: venta.hora, empleado: venta.empleado, fecha: venta.fecha }); }
+    async function guardarGasto(gasto, turnoId) { await supabase.from('gastos').insert({ turno_id: turnoId, concepto: gasto.concepto, valor: gasto.valor, hora: gasto.hora, empleado: gasto.empleado, fecha: gasto.fecha }); }
+    async function actualizarProducto(producto) { await supabase.from('productos').update({ nombre: producto.nombre, precio: producto.precio, cantidad: producto.cantidad }).eq('id', producto.id); }
+    async function agregarProducto(nombre, precio, cantidad) { await supabase.from('productos').insert({ nombre, precio, cantidad }); }
 
     function actualizarCarritoUI() {
         const container = document.getElementById("cartContainer");
         if (!container) return;
-        if (cart.length === 0) { container.innerHTML = "<div style='text-align:center; padding:20px;'>🛒 Carrito vacío</div>"; document.getElementById("cartTotal").innerText = formatearCOP(0); return; }
+        if (cart.length === 0) { container.innerHTML = "<div style='text-align:center; padding:20px; color:#aa7a4c;'>🛒 Carrito vacío</div>"; document.getElementById("cartTotal").innerText = formatearCOP(0); return; }
         let html = "", total = 0;
         cart.forEach((item, idx) => {
             total += item.subtotal;
-            html += `<div class="cart-item"><span><strong>${item.nombre}</strong> x${item.cantidad} = ${formatearCOP(item.subtotal)}</span>
-                    <div class="cart-controls"><button class="cart-minus" data-idx="${idx}">-</button><span>${item.cantidad}</span><button class="cart-plus" data-idx="${idx}">+</button><button class="cart-remove" data-idx="${idx}">🗑️</button></div></div>`;
+            html += `<div class="cart-item"><span><strong>${item.nombre}</strong> x${item.cantidad} = ${formatearCOP(item.subtotal)}</span><div class="cart-controls"><button class="cart-minus" data-idx="${idx}">-</button><span>${item.cantidad}</span><button class="cart-plus" data-idx="${idx}">+</button><button class="cart-remove" data-idx="${idx}">🗑️</button></div></div>`;
         });
         container.innerHTML = html;
         document.getElementById("cartTotal").innerText = formatearCOP(total);
-        document.querySelectorAll('.cart-minus').forEach(b => b.addEventListener('click', (e) => { let i = parseInt(b.dataset.idx); if (cart[i].cantidad > 1) { cart[i].cantidad--; cart[i].subtotal = cart[i].cantidad * cart[i].precioUnitario; } else cart.splice(i,1); actualizarCarritoUI(); calcularCambio(); }));
-        document.querySelectorAll('.cart-plus').forEach(b => b.addEventListener('click', (e) => { let i = parseInt(b.dataset.idx); let p = inventario.find(pr => pr.id === cart[i].productId); if (p && p.cantidad >= cart[i].cantidad+1) { cart[i].cantidad++; cart[i].subtotal = cart[i].cantidad * cart[i].precioUnitario; } else alert("Stock insuficiente"); actualizarCarritoUI(); calcularCambio(); }));
-        document.querySelectorAll('.cart-remove').forEach(b => b.addEventListener('click', (e) => { let i = parseInt(b.dataset.idx); cart.splice(i,1); actualizarCarritoUI(); calcularCambio(); }));
+        document.querySelectorAll('.cart-minus').forEach(btn => btn.addEventListener('click', (e) => {
+            let idx = parseInt(btn.dataset.idx);
+            if (cart[idx].cantidad > 1) { cart[idx].cantidad--; cart[idx].subtotal = cart[idx].cantidad * cart[idx].precioUnitario; }
+            else cart.splice(idx,1);
+            actualizarCarritoUI(); calcularCambio();
+        }));
+        document.querySelectorAll('.cart-plus').forEach(btn => btn.addEventListener('click', (e) => {
+            let idx = parseInt(btn.dataset.idx);
+            let prod = inventario.find(p => p.id === cart[idx].productId);
+            if (prod && prod.cantidad >= cart[idx].cantidad+1) { cart[idx].cantidad++; cart[idx].subtotal = cart[idx].cantidad * cart[idx].precioUnitario; }
+            else alert("Stock insuficiente");
+            actualizarCarritoUI(); calcularCambio();
+        }));
+        document.querySelectorAll('.cart-remove').forEach(btn => btn.addEventListener('click', (e) => {
+            let idx = parseInt(btn.dataset.idx);
+            cart.splice(idx,1);
+            actualizarCarritoUI(); calcularCambio();
+        }));
         calcularCambio();
     }
-    function agregarAlCarrito(pid, cant) { let p = inventario.find(i => i.id === pid); if (!p || cant<=0) return; if (p.cantidad < cant) { alert(`Stock insuficiente de ${p.nombre}`); return; } let ex = cart.find(i => i.productId === pid); if (ex) { if (p.cantidad >= ex.cantidad + cant) { ex.cantidad += cant; ex.subtotal = ex.cantidad * ex.precioUnitario; } else alert(`No hay suficiente stock`); } else { cart.push({ productId: pid, nombre: p.nombre, cantidad: cant, precioUnitario: p.precio, subtotal: p.precio * cant }); } actualizarCarritoUI(); }
-    function limpiarCarrito() { cart = []; actualizarCarritoUI(); }
-    function calcularCambio() { let m = document.querySelector('input[name="metodoPagoCarrito"]:checked').value; let sec = document.getElementById("efectivoSection"); if (m === "nequi") { sec.style.display = "none"; document.getElementById("cambioDisplay").innerText = "💰 (Nequi)"; return; } sec.style.display = "block"; let total = cart.reduce((s,i)=>s+i.subtotal,0); let rec = parseFloat(document.getElementById("montoRecibido").value)||0; let cambio = rec - total; document.getElementById("cambioDisplay").innerHTML = cambio >=0 ? `💰 Cambio: ${formatearCOP(cambio)}` : `⚠️ Faltan ${formatearCOP(-cambio)}`; }
+
+    function agregarAlCarrito(productId, cantidad) {
+        let prod = inventario.find(p => p.id === productId);
+        if (!prod || cantidad<=0) return;
+        if (prod.cantidad < cantidad) { alert(`Stock insuficiente de ${prod.nombre}`); return; }
+        let existente = cart.find(i => i.productId === productId);
+        if (existente) {
+            if (prod.cantidad >= existente.cantidad + cantidad) { existente.cantidad += cantidad; existente.subtotal = existente.cantidad * existente.precioUnitario; }
+            else alert(`No hay suficiente stock para añadir más ${prod.nombre}`);
+        } else {
+            cart.push({ productId, nombre: prod.nombre, cantidad, precioUnitario: prod.precio, subtotal: prod.precio * cantidad });
+        }
+        actualizarCarritoUI();
+    }
+
+    function calcularCambio() {
+        const metodo = document.querySelector('input[name="metodoPagoCarrito"]:checked').value;
+        const efectivoSec = document.getElementById("efectivoSection");
+        if (metodo === "nequi") { efectivoSec.style.display = "none"; document.getElementById("cambioDisplay").innerText = "💰 (Nequi: no aplica cambio)"; return; }
+        efectivoSec.style.display = "block";
+        let total = cart.reduce((s,i)=>s+i.subtotal,0);
+        let recibido = parseFloat(document.getElementById("montoRecibido").value) || 0;
+        let cambio = recibido - total;
+        document.getElementById("cambioDisplay").innerHTML = cambio >= 0 ? `💰 Cambio: ${formatearCOP(cambio)}` : `⚠️ Falta dinero: ${formatearCOP(Math.abs(cambio))}`;
+    }
+
     async function confirmarVenta() {
         if (cart.length === 0) { alert("Carrito vacío"); return; }
         let metodo = document.querySelector('input[name="metodoPagoCarrito"]:checked').value;
         let total = cart.reduce((s,i)=>s+i.subtotal,0);
-        if (metodo === "efectivo") { let rec = parseFloat(document.getElementById("montoRecibido").value)||0; if (rec < total) { alert(`Faltan ${formatearCOP(total - rec)}`); return; } cajaTotal += total; await guardarCaja(); }
-        for (let item of cart) { let p = inventario.find(pr => pr.id === item.productId); if (p.cantidad < item.cantidad) { alert(`Stock ${p.nombre}`); return; } p.cantidad -= item.cantidad; await actualizarProducto(p); }
+        if (metodo === "efectivo") {
+            let recibido = parseFloat(document.getElementById("montoRecibido").value) || 0;
+            if (recibido < total) { alert(`Faltan ${formatearCOP(total - recibido)}`); return; }
+            cajaTotal += total;
+            await guardarCaja();
+        }
+        for (let item of cart) {
+            let prod = inventario.find(p=>p.id === item.productId);
+            if (prod.cantidad < item.cantidad) { alert(`Stock insuficiente de ${item.nombre}`); return; }
+            prod.cantidad -= item.cantidad;
+            await actualizarProducto(prod);
+        }
         let turnoId = currentShift === "manana" ? "manana" : "tarde";
         let ventaReg = { productos: cart.map(i=>({ nombre:i.nombre, cantidad:i.cantidad, precioUnitario:i.precioUnitario, subtotal:i.subtotal })), total, metodoPago: metodo, hora: new Date().toLocaleTimeString(), empleado: currentUser?.nombre || "Admin", fecha: new Date().toISOString().slice(0,10) };
         await guardarVenta(ventaReg, turnoId);
-        await cargarDatos();
+        await cargarDatosSupabase();
         limpiarCarrito();
         document.getElementById("montoRecibido").value = "";
-        mostrarToast(`Venta: ${formatearCOP(total)} (${metodo})`);
+        actualizarUI();
+        mostrarToast(`Venta registrada: ${formatearCOP(total)}`);
     }
+
     async function registrarGasto(concepto, valor) {
-        if (!concepto.trim() || isNaN(valor)||valor<=0) { alert("Datos inválidos"); return; }
-        cajaTotal -= valor; await guardarCaja();
+        if (!concepto.trim() || isNaN(valor)||valor<=0) { alert("Datos inválidos"); return false; }
+        cajaTotal -= valor;
+        await guardarCaja();
         let turnoId = currentShift === "manana" ? "manana" : "tarde";
         let gastoReg = { concepto, valor, hora: new Date().toLocaleTimeString(), empleado: currentUser?.nombre, fecha: new Date().toISOString().slice(0,10) };
         await guardarGasto(gastoReg, turnoId);
-        await cargarDatos();
-        mostrarToast(`Gasto: ${concepto} - ${formatearCOP(valor)}`);
+        await cargarDatosSupabase();
+        mostrarToast(`Gasto: ${concepto} - ${formatearCOP(valor)}`); return true;
     }
+
+    function limpiarCarrito() { cart = []; actualizarCarritoUI(); }
+
     function renderPOS() {
-        const term = document.getElementById("productSearch")?.value.toLowerCase() || "";
-        const filtrados = inventario.filter(p => p.nombre.toLowerCase().includes(term));
-        const cont = document.getElementById("productListPOS");
-        if (cont) {
-            cont.innerHTML = "";
-            filtrados.forEach(prod => {
+        const searchTerm = document.getElementById("productSearch")?.value.toLowerCase() || "";
+        const filtered = inventario.filter(p => p.nombre.toLowerCase().includes(searchTerm));
+        const container = document.getElementById("productListPOS");
+        if (container) {
+            container.innerHTML = "";
+            filtered.forEach(prod => {
                 let stockClass = prod.cantidad === 0 ? "stock-cero" : (prod.cantidad < 5 ? "stock-bajo" : "");
                 let stockText = prod.cantidad === 0 ? "AGOTADO" : (prod.cantidad < 5 ? `⚠️ Stock bajo: ${prod.cantidad}` : `Stock: ${prod.cantidad}`);
                 let div = document.createElement("div");
                 div.className = "product-pos-item";
-                div.innerHTML = `<span><strong>${prod.nombre}</strong> · ${formatearCOP(prod.precio)}<br><span class="${stockClass}">${stockText}</span></span><button class="btn-sell-pos" data-id="${prod.id}" style="background:#2f8b46; border:none; border-radius:30px; padding:4px 12px; color:white;" ${prod.cantidad===0 ? 'disabled' : ''}>+1</button>`;
-                cont.appendChild(div);
+                div.innerHTML = `<span><strong>${prod.nombre}</strong> · ${formatearCOP(prod.precio)}<br><span class="${stockClass}">${stockText}</span></span><button class="btn-sell-pos" data-id="${prod.id}" style="background:#2f8b46; border:none; padding:4px 12px; border-radius:30px; color:white;" ${prod.cantidad===0 ? 'disabled' : ''}>+1</button>`;
+                container.appendChild(div);
             });
-            document.querySelectorAll('.btn-sell-pos').forEach(b => b.addEventListener('click', (e) => agregarAlCarrito(parseInt(b.dataset.id), 1)));
+            document.querySelectorAll('.btn-sell-pos').forEach(btn => btn.addEventListener('click', (e) => { let id = parseInt(btn.dataset.id); agregarAlCarrito(id, 1); }));
         }
-        const btns = document.getElementById("posButtonsContainer");
-        if (btns) {
-            btns.innerHTML = "";
-            inventario.slice(0,8).forEach(prod => { let b = document.createElement("button"); b.className = "pos-product-btn"; b.innerText = `${prod.nombre}\n${formatearCOP(prod.precio)}`; if (prod.cantidad === 0) b.style.opacity = "0.5"; b.onclick = () => agregarAlCarrito(prod.id, 1); btns.appendChild(b); });
+        const posBtns = document.getElementById("posButtonsContainer");
+        if (posBtns) {
+            posBtns.innerHTML = "";
+            inventario.slice(0,8).forEach(prod => {
+                let btn = document.createElement("button");
+                btn.className = "pos-product-btn";
+                btn.innerText = `${prod.nombre}\n${formatearCOP(prod.precio)}`;
+                if (prod.cantidad === 0) btn.style.opacity = "0.5";
+                btn.onclick = () => agregarAlCarrito(prod.id, 1);
+                posBtns.appendChild(btn);
+            });
         }
     }
+
+    async function cargarListaUsuarios() {
+        const { data } = await supabase.from('usuarios').select('*').eq('tipo', 'empleado');
+        const container = document.getElementById("usersList");
+        if (container && data) {
+            container.innerHTML = "";
+            data.forEach(emp => {
+                let div = document.createElement("div");
+                div.className = "user-item";
+                div.innerHTML = `<span><strong>${emp.id}</strong> - ${emp.nombre}</span><button class="delete-user" data-user="${emp.id}">🗑️ Eliminar</button>`;
+                container.appendChild(div);
+            });
+            document.querySelectorAll('.delete-user').forEach(btn => btn.addEventListener('click', async (e) => {
+                let uid = btn.dataset.user;
+                if (confirm(`Eliminar ${uid}?`)) { await supabase.from('usuarios').delete().eq('id', uid); cargarListaUsuarios(); mostrarToast("Usuario eliminado"); }
+            }));
+        }
+    }
+
     function actualizarUI() {
-        let ventasManana = turnoManana.ventas.reduce((s,v)=>s+v.total,0), ventasTarde = turnoTarde.ventas.reduce((s,v)=>s+v.total,0), totalVentas = ventasManana+ventasTarde;
-        let nequiManana = turnoManana.ventas.filter(v=>v.metodo_pago==="nequi").reduce((s,v)=>s+v.total,0), nequiTarde = turnoTarde.ventas.filter(v=>v.metodo_pago==="nequi").reduce((s,v)=>s+v.total,0), totalNequi = nequiManana+nequiTarde;
-        let gastosManana = turnoManana.gastos.reduce((s,g)=>s+g.valor,0), gastosTarde = turnoTarde.gastos.reduce((s,g)=>s+g.valor,0), totalGastos = gastosManana+gastosTarde;
+        const ventasManana = turnoManana.ventas.reduce((s,v)=>s+v.total,0);
+        const ventasTarde = turnoTarde.ventas.reduce((s,v)=>s+v.total,0);
+        const totalVentas = ventasManana + ventasTarde;
+        const nequiManana = turnoManana.ventas.filter(v=>v.metodo_pago==="nequi").reduce((s,v)=>s+v.total,0);
+        const nequiTarde = turnoTarde.ventas.filter(v=>v.metodo_pago==="nequi").reduce((s,v)=>s+v.total,0);
+        const totalNequi = nequiManana + nequiTarde;
+        const gastosManana = turnoManana.gastos.reduce((s,g)=>s+g.valor,0);
+        const gastosTarde = turnoTarde.gastos.reduce((s,g)=>s+g.valor,0);
+        const totalGastos = gastosManana + gastosTarde;
         document.getElementById("totalMoney").innerHTML = formatearCOP(cajaTotal);
         document.getElementById("totalVentasHoy").innerHTML = formatearCOP(totalVentas);
         document.getElementById("totalNequiHoy").innerHTML = formatearCOP(totalNequi);
         document.getElementById("totalGastosHoy").innerHTML = formatearCOP(totalGastos);
         renderPOS();
+
         if (currentUser?.tipo === "empleado" && currentShift) {
-            let turno = currentShift === "manana" ? turnoManana : turnoTarde;
-            let misVentas = turno.ventas.reduce((s,v)=>s+v.total,0), misGastos = turno.gastos.reduce((s,g)=>s+g.valor,0), miNequi = turno.ventas.filter(v=>v.metodo_pago==="nequi").reduce((s,v)=>s+v.total,0);
-            document.getElementById("miAporteNeto").innerHTML = formatearCOP(misVentas-misGastos);
+            const turnoActual = currentShift === "manana" ? turnoManana : turnoTarde;
+            const misVentas = turnoActual.ventas.reduce((s,v)=>s+v.total,0);
+            const misGastos = turnoActual.gastos.reduce((s,g)=>s+g.valor,0);
+            const miNequi = turnoActual.ventas.filter(v=>v.metodo_pago==="nequi").reduce((s,v)=>s+v.total,0);
+            document.getElementById("miAporteNeto").innerHTML = formatearCOP(misVentas - misGastos);
             document.getElementById("miNequiTotal").innerHTML = formatearCOP(miNequi);
-            let gh = ""; turno.gastos.forEach(g=>{ gh+=`<div style="display:flex;justify-content:space-between;"><span>${g.concepto}</span><span>${formatearCOP(g.valor)}</span></div>`; });
-            document.getElementById("gastosTurnoList").innerHTML = gh || "Sin gastos";
+            let gastosHtml = "";
+            turnoActual.gastos.forEach(g => { gastosHtml += `<div style="display:flex;justify-content:space-between;"><span>${g.concepto}</span><span>${formatearCOP(g.valor)}</span></div>`; });
+            document.getElementById("gastosTurnoList").innerHTML = gastosHtml || "Sin gastos";
             document.getElementById("panelTurnoTitulo").innerHTML = `🛒 MI TURNO (${currentShift==="manana"?"Mañana":"Tarde"}) - ${currentUser.nombre}`;
-            document.getElementById("adminReports").style.display = "none"; document.getElementById("adminPanel").style.display = "none";
+            document.getElementById("adminReports").style.display = "none";
+            document.getElementById("adminPanel").style.display = "none";
         } else if (currentUser?.tipo === "admin") {
             document.getElementById("panelTurnoTitulo").innerHTML = "🛒 CARRITO (Admin)";
-            document.getElementById("gastosTurnoList").innerHTML = "<div>Admin asigna gastos/ventas</div>";
-            document.getElementById("adminPanel").style.display = "block"; document.getElementById("adminReports").style.display = "block";
+            document.getElementById("gastosTurnoList").innerHTML = "<div>Admin asigna gastos/ventas a turnos</div>";
+            document.getElementById("adminPanel").style.display = "block";
+            document.getElementById("adminReports").style.display = "block";
             cargarListaUsuarios();
+            // Cargar lista de productos editables
+            const editContainer = document.getElementById("listaProductosEditar");
+            if (editContainer) {
+                editContainer.innerHTML = "";
+                inventario.forEach(prod => {
+                    let div = document.createElement("div");
+                    div.style.display = "flex"; div.style.justifyContent = "space-between"; div.style.alignItems = "center"; div.style.background = "#f7ecdd"; div.style.borderRadius = "30px"; div.style.padding = "8px 12px"; div.style.margin = "5px 0";
+                    div.innerHTML = `<span><strong>${prod.nombre}</strong> - ${formatearCOP(prod.precio)} (stock ${prod.cantidad})</span><button class="edit-prod-btn" data-id="${prod.id}" style="background:#d9944a; border:none; border-radius:30px; padding:4px 12px; color:white;">✏️ Editar</button>`;
+                    editContainer.appendChild(div);
+                });
+                document.querySelectorAll('.edit-prod-btn').forEach(btn => btn.addEventListener('click', (e) => {
+                    let id = parseInt(btn.dataset.id);
+                    let prod = inventario.find(p => p.id === id);
+                    if (prod) {
+                        document.getElementById("editProductId").value = prod.id;
+                        document.getElementById("editProductNombre").value = prod.nombre;
+                        document.getElementById("editProductPrecio").value = prod.precio;
+                        document.getElementById("editProductStock").value = prod.cantidad;
+                        document.getElementById("editProductModal").style.display = "flex";
+                    }
+                }));
+            }
+            document.getElementById("btnSaveEdit").onclick = async () => {
+                let id = parseInt(document.getElementById("editProductId").value);
+                let nombre = document.getElementById("editProductNombre").value;
+                let precio = parseInt(document.getElementById("editProductPrecio").value);
+                let stock = parseInt(document.getElementById("editProductStock").value);
+                if (id && nombre && !isNaN(precio) && !isNaN(stock)) {
+                    await supabase.from('productos').update({ nombre, precio, cantidad: stock }).eq('id', id);
+                    await cargarDatosSupabase();
+                    actualizarUI();
+                    document.getElementById("editProductModal").style.display = "none";
+                    mostrarToast("Producto actualizado");
+                } else alert("Datos inválidos");
+            };
+            document.getElementById("btnCancelEdit").onclick = () => { document.getElementById("editProductModal").style.display = "none"; };
         }
     }
-    async function cargarListaUsuarios() {
-        const { data: empleados } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'empleado');
-        const cont = document.getElementById("usersList"); if (!cont) return;
-        cont.innerHTML = "";
-        empleados?.forEach(emp => { let d = document.createElement("div"); d.className = "user-item"; d.innerHTML = `<span><strong>${emp.id}</strong> - ${emp.nombre}</span><button class="delete-user" data-user="${emp.id}">🗑️ Eliminar</button>`; cont.appendChild(d); });
-        document.querySelectorAll('.delete-user').forEach(b => b.addEventListener('click', async (e) => { let u = b.dataset.user; if (confirm(`Eliminar ${u}?`)) { await supabaseClient.from('usuarios').delete().eq('id', u); cargarListaUsuarios(); mostrarToast("Usuario eliminado"); } }));
-    }
-    // Login y eventos
-    document.addEventListener("DOMContentLoaded", () => {
-        document.querySelectorAll('.toggle-password').forEach(btn => btn.addEventListener('click', function(e) { e.preventDefault(); let t = this.getAttribute('data-target'); let inp = document.getElementById(t); if (inp) inp.type = inp.type === "password" ? "text" : "password"; }));
-        const userInput = document.getElementById("loginUsername"), shiftDiv = document.getElementById("shiftSelectorDiv");
-        userInput.addEventListener("input", () => shiftDiv.style.display = userInput.value.toLowerCase() === "admin" ? "none" : "block");
-        let selShift = null;
-        const morn = document.getElementById("shiftMorningBtn"), aft = document.getElementById("shiftAfternoonBtn");
-        function upd() { morn.classList.toggle("selected", selShift === "manana"); aft.classList.toggle("selected", selShift === "tarde"); }
-        morn.onclick = () => { selShift = "manana"; upd(); };
-        aft.onclick = () => { selShift = "tarde"; upd(); };
-        document.getElementById("loginBtn").onclick = async () => {
-            let user = userInput.value.trim().toLowerCase();
-            let pass = document.getElementById("loginPassword").value;
-            let err = document.getElementById("loginError");
-            err.innerText = "";
-            if (!user || !pass) { err.innerText = "❌ Ingresa usuario y contraseña"; return; }
-            const { data } = await supabaseClient.from('usuarios').select('*').eq('id', user);
-            if (!data || data.length === 0) { err.innerText = "❌ Usuario o contraseña incorrectos"; return; }
-            let u = data[0];
-            if (u.password !== pass) { err.innerText = "❌ Usuario o contraseña incorrectos"; return; }
-            if (u.tipo === "admin") {
-                currentUser = { tipo: "admin", nombre: u.nombre, id: user };
-                currentShift = null;
-                document.getElementById("loginScreen").style.display = "none";
-                document.getElementById("mainApp").style.display = "block";
-                document.getElementById("userStatusBadge").innerHTML = "👑 Admin · Control total";
-                await cargarDatos();
-            } else {
-                if (!selShift) { err.innerText = "❌ Selecciona un turno"; return; }
-                await supabaseClient.from('turnos').upsert({ id: selShift, empleado: u.nombre, ultima_actualizacion: new Date().toISOString() });
-                currentUser = { tipo: "empleado", nombre: u.nombre, id: user };
-                currentShift = selShift;
-                document.getElementById("loginScreen").style.display = "none";
-                document.getElementById("mainApp").style.display = "block";
-                document.getElementById("userStatusBadge").innerHTML = `${u.nombre} · ${selShift === "manana" ? "🌅 Mañana" : "🌆 Tarde"}`;
-                await cargarDatos();
-            }
-        };
-        document.getElementById("logoutBtn").onclick = () => { currentUser = null; cart = []; document.getElementById("loginScreen").style.display = "flex"; document.getElementById("mainApp").style.display = "none"; actualizarCarritoUI(); };
-        document.getElementById("btnConfirmarVenta").onclick = confirmarVenta;
-        document.getElementById("btnLimpiarCarrito").onclick = limpiarCarrito;
-        document.getElementById("btnAgregarGasto").onclick = () => { let c = document.getElementById("gastoConcepto").value, v = parseInt(document.getElementById("gastoValor").value); if (c && v) registrarGasto(c, v); document.getElementById("gastoConcepto").value = ""; document.getElementById("gastoValor").value = ""; };
-        document.getElementById("montoRecibido").addEventListener("input", calcularCambio);
-        document.querySelectorAll('input[name="metodoPagoCarrito"]').forEach(r => r.addEventListener("change", calcularCambio));
-        document.getElementById("btnQuickAdd1").onclick = () => { let s = document.getElementById("cartProductSelect"); if (s && s.value) agregarAlCarrito(parseInt(s.value), 1); };
-        document.getElementById("btnQuickAdd2").onclick = () => { let s = document.getElementById("cartProductSelect"); if (s && s.value) agregarAlCarrito(parseInt(s.value), 2); };
-        document.getElementById("productSearch").addEventListener("input", renderPOS);
-        document.getElementById("btnCreateUser").onclick = async () => { let u = document.getElementById("newUsername").value, n = document.getElementById("newFullName").value, p = document.getElementById("newPassword").value; if (u && n && p) { await supabaseClient.from('usuarios').insert({ id: u.toLowerCase(), password: p, nombre: n, tipo: "empleado" }); cargarListaUsuarios(); mostrarToast("Empleado creado"); } };
-        document.getElementById("btnAgregarProducto").onclick = async () => { let nom = document.getElementById("newProdNombre").value, prec = parseInt(document.getElementById("newProdPrecio").value), stock = parseInt(document.getElementById("newProdStock").value); if (nom && !isNaN(prec) && !isNaN(stock)) { await agregarProducto(nom, prec, stock); await cargarDatos(); mostrarToast("Producto agregado"); } };
-        document.getElementById("btnModificarCaja").onclick = async () => { let n = parseInt(document.getElementById("adminSetCaja").value); if (!isNaN(n) && n>=0) { cajaTotal = n; await guardarCaja(); await cargarDatos(); mostrarToast("Caja actualizada"); } };
-        // Placeholders para otras funciones (se pueden añadir después)
-        document.getElementById("btnExportar").onclick = () => alert("Exportar datos próximamente");
-        document.getElementById("btnImportar").onclick = () => document.getElementById("importFile").click();
-        document.getElementById("btnNuevoDia").onclick = () => alert("Nuevo día (reset ventas/gastos) próximo");
-        document.getElementById("btnBackupManual").onclick = () => alert("Backup manual próximo");
-        document.getElementById("btnExportCSV").onclick = () => alert("Export CSV próximo");
-        document.getElementById("btnPrintPDF").onclick = () => alert("Imprimir reportes próximo");
-    });
+
+    function formatearCOP(valor) { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(valor); }
+    function mostrarToast(msg) { let t = document.createElement('div'); t.innerText = msg; t.style.position = 'fixed'; t.style.bottom = '20px'; t.style.left = '50%'; t.style.transform = 'translateX(-50%)'; t.style.backgroundColor = '#2c1b12'; t.style.color = '#ffefcf'; t.style.padding = '10px 24px'; t.style.borderRadius = '40px'; t.style.zIndex = '9999'; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
 </script>
 </body>
 </html>
