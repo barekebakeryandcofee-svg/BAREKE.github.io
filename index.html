@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Bareke · Panadería & Café · Sistema en la Nube</title>
+    <title>Bareke · Panadería & Café · Sistema Profesional</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -33,17 +33,20 @@
         .sales-layout { display: flex; flex-wrap: wrap; gap: 25px; margin-bottom: 30px; }
         .pos-panel, .cart-panel { flex: 1; background: #fffbf4; border-radius: 40px; padding: 22px; box-shadow: 0 12px 25px rgba(0,0,0,0.05); }
         .pos-buttons { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; margin: 15px 0; }
-        .pos-product-btn { background: #f0dbc2; border: none; border-radius: 30px; padding: 12px 8px; font-weight: bold; cursor: pointer; text-align: center; }
+        .pos-product-btn { background: #f0dbc2; border: none; border-radius: 30px; padding: 12px 8px; font-weight: bold; cursor: pointer; text-align: center; transition: 0.05s linear; }
+        .pos-product-btn:active { transform: scale(0.96); background: #e0c49b; }
         .search-box { width: 100%; padding: 10px; border-radius: 50px; border: 1px solid #eedaba; margin-bottom: 15px; }
         .product-list-pos { max-height: 300px; overflow-y: auto; }
-        .product-pos-item { background: white; margin: 6px 0; padding: 8px 12px; border-radius: 30px; display: flex; justify-content: space-between; align-items: center; }
+        .product-pos-item { background: white; margin: 6px 0; padding: 8px 12px; border-radius: 30px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.05s linear; }
+        .product-pos-item:active { background: #ffe0b5; }
         .stock-bajo { color: #e67e22; font-weight: bold; }
         .stock-cero { color: #e74c3c; font-weight: bold; }
         .cart-item { background: #f9f2e6; border-radius: 25px; padding: 8px 12px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .cart-controls { display: flex; gap: 8px; align-items: center; }
+        .cart-controls button { background: #d9944a; border: none; border-radius: 20px; padding: 4px 8px; color: white; cursor: pointer; }
         .cart-total { font-size: 1.4rem; font-weight: bold; text-align: right; margin: 15px 0; }
         .change-display { background: #e8d5bd; border-radius: 30px; padding: 10px; text-align: center; font-weight: bold; margin: 10px 0; }
-        .btn-primary { background: #d9944a; border: none; padding: 10px; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; }
+        .btn-primary { background: #d9944a; border: none; padding: 10px; border-radius: 40px; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; transition: 0.05s linear; }
+        .btn-primary:active { transform: scale(0.97); background: #c27e3a; }
         .btn-secondary { background: #6c757d; }
         .btn-danger { background: #b34e3a; }
         .admin-section { background: #fffbf4; border-radius: 40px; padding: 22px; margin-top: 20px; }
@@ -56,6 +59,8 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 3000; }
         .modal-content { background: white; padding: 25px; border-radius: 40px; width: 90%; max-width: 400px; }
         .turno-actual { display: inline-block; background: #f0dbc2; border-radius: 30px; padding: 5px 12px; margin-left: 10px; font-size: 0.8rem; font-weight: normal; }
+        .flash { animation: flash-border 0.3s ease-out; }
+        @keyframes flash-border { 0% { background-color: rgba(255, 215, 0, 0.8); box-shadow: 0 0 10px gold; } 100% { background-color: transparent; box-shadow: none; } }
         @media (max-width: 900px) { .sales-layout { flex-direction: column; } }
     </style>
 </head>
@@ -242,7 +247,7 @@
 </div>
 
 <script>
-    // ==================== SUPABASE CLIENTE (evita conflicto de nombre) ====================
+    // ==================== SUPABASE CLIENTE ====================
     const SUPABASE_URL = "https://xgnwcurixdsntafchbmn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnbndjdXJpeGRzbnRhZmNoYm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDY3ODUsImV4cCI6MjA5NDA4Mjc4NX0.sW-fYAUPMVUDL_ztX8Wu6JtChha5-sUCHIUwKFWGnAY";
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -259,16 +264,76 @@
     let chartInstance = null;
     let realtimeChannel = null;
 
+    // ========== LISTA COMPLETA DE PRODUCTOS (con precios) ==========
+    const productosBase = [
+        { id: 1, nombre: "🥟 Buñuelo", precio: 1800, cantidad: 30 },
+        { id: 2, nombre: "🧀 Pandebono", precio: 1600, cantidad: 30 },
+        { id: 3, nombre: "🥐 Almojábana", precio: 2000, cantidad: 25 },
+        { id: 4, nombre: "🥖 Pan Aliñado", precio: 1200, cantidad: 40 },
+        { id: 5, nombre: "🍞 Pan Panocha", precio: 1100, cantidad: 35 },
+        { id: 6, nombre: "🥨 Roscón de Bocadillo", precio: 2500, cantidad: 20 },
+        { id: 7, nombre: "🍪 Liberales", precio: 900, cantidad: 45 },
+        { id: 8, nombre: "🥐 Croissant", precio: 2200, cantidad: 22 },
+        { id: 9, nombre: "🍰 Brazo de Reina", precio: 3500, cantidad: 12 },
+        { id: 10, nombre: "🧀 Palitos de Queso", precio: 1500, cantidad: 30 },
+        { id: 11, nombre: "🧀 Dedos de Queso", precio: 1500, cantidad: 30 },
+        { id: 12, nombre: "🍷 Torta Envinada", precio: 4000, cantidad: 10 },
+        { id: 13, nombre: "🥕 Torta de Zanahoria", precio: 3200, cantidad: 15 },
+        { id: 14, nombre: "🍫 Torta Marmoleada", precio: 3500, cantidad: 12 },
+        { id: 15, nombre: "🍮 Postres (variados)", precio: 5000, cantidad: 10 },
+        { id: 16, nombre: "🥣 Arroz con Leche", precio: 2800, cantidad: 15 },
+        { id: 17, nombre: "🍍 Pai de Piña", precio: 4200, cantidad: 8 },
+        { id: 18, nombre: "🥛 Pai de Leche", precio: 4000, cantidad: 8 },
+        { id: 19, nombre: "🍩 Donas", precio: 2500, cantidad: 20 },
+        { id: 20, nombre: "🐷 Chicharrones", precio: 1000, cantidad: 40 },
+        { id: 21, nombre: "🥨 Pañuelos", precio: 800, cantidad: 50 },
+        { id: 22, nombre: "🍪 Pan Galleta", precio: 600, cantidad: 60 },
+        { id: 23, nombre: "🥖 Pan de la Trenza", precio: 1800, cantidad: 20 },
+        { id: 24, nombre: "🍞 Pan Chocha", precio: 1500, cantidad: 25 },
+        { id: 25, nombre: "🍞 Tostadas", precio: 1000, cantidad: 40 },
+        { id: 26, nombre: "🍰 Torta de Vainilla", precio: 3500, cantidad: 12 },
+        { id: 27, nombre: "🍫 Brownies", precio: 2200, cantidad: 20 },
+        { id: 28, nombre: "🥖 Rollos", precio: 1200, cantidad: 30 },
+        { id: 29, nombre: "🍞 Pan Agridulce", precio: 2500, cantidad: 15 },
+        { id: 30, nombre: "🌶️ Aliñado", precio: 1300, cantidad: 30 }
+    ];
+
+    // ========== FUNCIONES DE AUDIO Y FEEDBACK ==========
+    function playBeep(frecuencia = 800, duracion = 120) {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.frequency.value = frecuencia;
+            gainNode.gain.value = 0.2;
+            oscillator.start();
+            gainNode.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duracion / 1000);
+            oscillator.stop(audioCtx.currentTime + duracion / 1000);
+        } catch(e) { console.log("Audio no soportado"); }
+    }
+
+    function playTap() {
+        playBeep(1200, 60);
+    }
+
+    function flashElement(elemento) {
+        if (!elemento) return;
+        elemento.classList.add('flash');
+        setTimeout(() => elemento.classList.remove('flash'), 300);
+    }
+
     // ========== UTILIDADES ==========
     function formatearCOP(valor) {
         return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(valor);
     }
 
-    function mostrarToast(msg) {
+    function mostrarToast(msg, tipo = "info") {
         let toast = document.createElement('div');
         toast.innerText = msg;
         toast.style.position = 'fixed'; toast.style.bottom = '20px'; toast.style.left = '50%';
-        toast.style.transform = 'translateX(-50%)'; toast.style.backgroundColor = '#2c1b12';
+        toast.style.transform = 'translateX(-50%)'; toast.style.backgroundColor = tipo === "success" ? "#2a7f3b" : "#2c1b12";
         toast.style.color = '#ffefcf'; toast.style.padding = '10px 24px'; toast.style.borderRadius = '40px';
         toast.style.zIndex = '9999'; document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 2200);
@@ -279,95 +344,59 @@
         try {
             const { data: productos, error: errProd } = await supabaseClient.from('productos').select('*');
             if (errProd) throw errProd;
-            inventario = productos || [];
-
+            inventario = productos && productos.length ? productos : JSON.parse(JSON.stringify(productosBase));
+            if (!productos || productos.length === 0) {
+                for (let p of productosBase) await supabaseClient.from('productos').insert(p);
+            }
             const { data: cajaData, error: errCaja } = await supabaseClient.from('caja').select('total').order('id', { ascending: false }).limit(1);
             if (errCaja) throw errCaja;
             cajaTotal = (cajaData && cajaData[0]) ? cajaData[0].total : 280000;
-
             const { data: turnosData, error: errTurnos } = await supabaseClient.from('turnos').select('*');
             if (errTurnos) throw errTurnos;
             turnoManana.empleado = turnosData?.find(t => t.id === 'manana')?.empleado || null;
             turnoTarde.empleado = turnosData?.find(t => t.id === 'tarde')?.empleado || null;
-
             const hoy = new Date().toISOString().slice(0,10);
             const { data: ventasHoy, error: errVentas } = await supabaseClient.from('ventas').select('*').eq('fecha', hoy);
             if (errVentas) throw errVentas;
             turnoManana.ventas = ventasHoy?.filter(v => v.turno_id === 'manana') || [];
             turnoTarde.ventas = ventasHoy?.filter(v => v.turno_id === 'tarde') || [];
-
             const { data: gastosHoy, error: errGastos } = await supabaseClient.from('gastos').select('*').eq('fecha', hoy);
             if (errGastos) throw errGastos;
             turnoManana.gastos = gastosHoy?.filter(g => g.turno_id === 'manana') || [];
             turnoTarde.gastos = gastosHoy?.filter(g => g.turno_id === 'tarde') || [];
-
             const { data: historial, error: errHist } = await supabaseClient.from('historial_ventas').select('*').order('fecha', { ascending: true }).limit(7);
             if (errHist) throw errHist;
             ventasDiariasHistorial = historial || [];
-
             actualizarUI();
         } catch (e) {
             console.error("Error cargando datos:", e);
-            mostrarToast("Error al cargar datos de la nube: " + e.message);
+            mostrarToast("Error al cargar datos, usando valores locales", "error");
+            inventario = JSON.parse(JSON.stringify(productosBase));
+            actualizarUI();
         }
     }
 
-    async function guardarCaja() {
-        await supabaseClient.from('caja').insert({ total: cajaTotal });
-    }
-
-    async function guardarVenta(venta, turnoId) {
-        await supabaseClient.from('ventas').insert({
-            turno_id: turnoId,
-            productos: venta.productos,
-            total: venta.total,
-            metodo_pago: venta.metodoPago,
-            hora: venta.hora,
-            empleado: venta.empleado,
-            fecha: venta.fecha
-        });
-    }
-
-    async function guardarGasto(gasto, turnoId) {
-        await supabaseClient.from('gastos').insert({
-            turno_id: turnoId,
-            concepto: gasto.concepto,
-            valor: gasto.valor,
-            hora: gasto.hora,
-            empleado: gasto.empleado,
-            fecha: gasto.fecha
-        });
-    }
-
-    async function actualizarProducto(producto) {
-        await supabaseClient.from('productos').update({ nombre: producto.nombre, precio: producto.precio, cantidad: producto.cantidad }).eq('id', producto.id);
-    }
-
-    async function agregarProducto(nombre, precio, cantidad) {
-        await supabaseClient.from('productos').insert({ nombre, precio, cantidad });
-    }
+    async function guardarCaja() { await supabaseClient.from('caja').insert({ total: cajaTotal }); }
+    async function guardarVenta(venta, turnoId) { await supabaseClient.from('ventas').insert(venta); }
+    async function guardarGasto(gasto, turnoId) { await supabaseClient.from('gastos').insert(gasto); }
+    async function actualizarProducto(producto) { await supabaseClient.from('productos').update(producto).eq('id', producto.id); }
+    async function agregarProducto(nombre, precio, cantidad) { await supabaseClient.from('productos').insert({ nombre, precio, cantidad }); }
 
     // ========== REALTIME ==========
     function iniciarRealtime() {
         if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
         realtimeChannel = supabaseClient.channel('realtime-bareke')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => cargarDatosSupabase())
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gastos' }, () => cargarDatosSupabase())
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'productos' }, () => cargarDatosSupabase())
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'caja' }, () => cargarDatosSupabase())
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'turnos' }, () => cargarDatosSupabase())
-            .subscribe((status) => {
-                console.log('Realtime status:', status);
-            });
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ventas' }, () => cargarDatosSupabase())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'gastos' }, () => cargarDatosSupabase())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, () => cargarDatosSupabase())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'caja' }, () => cargarDatosSupabase())
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'turnos' }, () => cargarDatosSupabase())
+            .subscribe();
     }
+    function detenerRealtime() { if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel); realtimeChannel = null; }
 
-    function detenerRealtime() {
-        if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
-        realtimeChannel = null;
-    }
-
-    // ========== LÓGICA DEL CARRITO ==========
-    function actualizarCarritoUI() {
+    // ========== CARRITO Y VENTAS (con feedback) ==========
+    function actualizarCarritoUI() { /* mismo código que antes, se mantiene */ 
         const container = document.getElementById("cartContainer");
         if (!container) return;
         if (cart.length === 0) {
@@ -384,28 +413,19 @@
         });
         container.innerHTML = html;
         document.getElementById("cartTotal").innerText = formatearCOP(total);
-        document.querySelectorAll('.cart-minus').forEach(btn => btn.addEventListener('click', (e) => {
-            let idx = parseInt(btn.dataset.idx);
-            if (cart[idx].cantidad > 1) { cart[idx].cantidad--; cart[idx].subtotal = cart[idx].cantidad * cart[idx].precioUnitario; }
-            else cart.splice(idx,1);
-            actualizarCarritoUI(); calcularCambio();
-        }));
-        document.querySelectorAll('.cart-plus').forEach(btn => btn.addEventListener('click', (e) => {
-            let idx = parseInt(btn.dataset.idx);
-            let prod = inventario.find(p => p.id === cart[idx].productId);
-            if (prod && prod.cantidad >= cart[idx].cantidad+1) { cart[idx].cantidad++; cart[idx].subtotal = cart[idx].cantidad * cart[idx].precioUnitario; }
-            else alert("Stock insuficiente");
-            actualizarCarritoUI(); calcularCambio();
-        }));
-        document.querySelectorAll('.cart-remove').forEach(btn => btn.addEventListener('click', (e) => {
-            let idx = parseInt(btn.dataset.idx);
-            cart.splice(idx,1);
+        document.querySelectorAll('.cart-minus, .cart-plus, .cart-remove').forEach(btn => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            playTap();
+            if(btn.classList.contains('cart-minus')) { let idx=parseInt(btn.dataset.idx); if(cart[idx].cantidad>1){cart[idx].cantidad--; cart[idx].subtotal=cart[idx].cantidad*cart[idx].precioUnitario;} else cart.splice(idx,1); }
+            else if(btn.classList.contains('cart-plus')) { let idx=parseInt(btn.dataset.idx); let prod=inventario.find(p=>p.id===cart[idx].productId); if(prod && prod.cantidad>=cart[idx].cantidad+1){cart[idx].cantidad++; cart[idx].subtotal=cart[idx].cantidad*cart[idx].precioUnitario;} else alert("Stock insuficiente"); }
+            else if(btn.classList.contains('cart-remove')) { let idx=parseInt(btn.dataset.idx); cart.splice(idx,1); }
             actualizarCarritoUI(); calcularCambio();
         }));
         calcularCambio();
     }
 
     function agregarAlCarrito(productId, cantidad) {
+        playTap();
         let prod = inventario.find(p => p.id === productId);
         if (!prod || cantidad<=0) return;
         if (prod.cantidad < cantidad) { alert(`Stock insuficiente de ${prod.nombre}`); return; }
@@ -422,7 +442,6 @@
     }
 
     function limpiarCarrito() { cart = []; actualizarCarritoUI(); }
-
     function calcularCambio() {
         const metodo = document.querySelector('input[name="metodoPagoCarrito"]:checked').value;
         const efectivoSec = document.getElementById("efectivoSection");
@@ -452,13 +471,16 @@
         }
         let turnoId = currentShift === "manana" ? "manana" : "tarde";
         let ventaReg = {
+            turno_id: turnoId,
             productos: cart.map(i=>({ nombre:i.nombre, cantidad:i.cantidad, precioUnitario:i.precioUnitario, subtotal:i.subtotal })),
-            total, metodoPago: metodo, hora: new Date().toLocaleTimeString(), empleado: currentUser?.nombre || "Admin", fecha: new Date().toISOString().slice(0,10)
+            total, metodo_pago: metodo, hora: new Date().toLocaleTimeString(), empleado: currentUser?.nombre || "Admin", fecha: new Date().toISOString().slice(0,10)
         };
         await guardarVenta(ventaReg, turnoId);
         limpiarCarrito();
         document.getElementById("montoRecibido").value = "";
-        mostrarToast(`Venta registrada: ${formatearCOP(total)} (${metodo==="nequi"?"Nequi":"Efectivo"})`);
+        mostrarToast(`Venta registrada: ${formatearCOP(total)} (${metodo==="nequi"?"Nequi":"Efectivo"})`, "success");
+        playBeep(1000, 200);
+        flashElement(document.querySelector('.cart-panel'));
     }
 
     async function registrarGasto(concepto, valor) {
@@ -466,12 +488,14 @@
         cajaTotal -= valor;
         await guardarCaja();
         let turnoId = currentShift === "manana" ? "manana" : "tarde";
-        let gastoReg = { concepto, valor, hora: new Date().toLocaleTimeString(), empleado: currentUser?.nombre, fecha: new Date().toISOString().slice(0,10) };
+        let gastoReg = { turno_id: turnoId, concepto, valor, hora: new Date().toLocaleTimeString(), empleado: currentUser?.nombre, fecha: new Date().toISOString().slice(0,10) };
         await guardarGasto(gastoReg, turnoId);
-        mostrarToast(`Gasto: ${concepto} - ${formatearCOP(valor)}`); return true;
+        mostrarToast(`Gasto: ${concepto} - ${formatearCOP(valor)}`);
+        playTap();
+        return true;
     }
 
-    // ========== RENDER POS ==========
+    // ========== RENDER POS (con feedback táctil) ==========
     function renderPOS() {
         const searchTerm = document.getElementById("productSearch")?.value.toLowerCase() || "";
         const filtered = inventario.filter(p => p.nombre.toLowerCase().includes(searchTerm));
@@ -488,23 +512,35 @@
                 container.appendChild(div);
             });
             document.querySelectorAll('.btn-sell-pos').forEach(btn => btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                playTap();
+                flashElement(btn);
                 let id = parseInt(btn.dataset.id);
                 agregarAlCarrito(id, 1);
             }));
+            document.querySelectorAll('.product-pos-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if(e.target.tagName !== 'BUTTON') {
+                        playTap();
+                        flashElement(item);
+                        let btn = item.querySelector('.btn-sell-pos');
+                        if(btn) btn.click();
+                    }
+                });
+            });
         }
         const posBtns = document.getElementById("posButtonsContainer");
         if (posBtns) {
             posBtns.innerHTML = "";
-            inventario.slice(0,8).forEach(prod => {
+            inventario.slice(0,12).forEach(prod => {
                 let btn = document.createElement("button");
                 btn.className = "pos-product-btn";
                 btn.innerText = `${prod.nombre}\n${formatearCOP(prod.precio)}`;
                 if (prod.cantidad === 0) btn.style.opacity = "0.5";
-                btn.onclick = () => agregarAlCarrito(prod.id, 1);
+                btn.onclick = () => { playTap(); flashElement(btn); agregarAlCarrito(prod.id, 1); };
                 posBtns.appendChild(btn);
             });
         }
-        // Actualizar select del carrito
         const selectCart = document.getElementById("cartProductSelect");
         if (selectCart) {
             selectCart.innerHTML = "";
@@ -546,9 +582,73 @@
         await supabaseClient.from('productos').update({ nombre, precio, cantidad }).eq('id', id);
         document.getElementById("editProductModal").style.display = "none";
         mostrarToast("Producto actualizado");
+        await cargarDatosSupabase();
     }
 
-    // ========== REPORTES ==========
+    // ========== REPORTES Y EXPORTACIONES ==========
+    async function exportarCSV() {
+        if (currentUser?.tipo !== "admin") return;
+        const desde = document.getElementById("filterFechaDesde").value;
+        const hasta = document.getElementById("filterFechaHasta").value;
+        const empleado = document.getElementById("filterEmpleado").value;
+        const turno = document.getElementById("filterTurno").value;
+        let todas = [...turnoManana.ventas.map(v=>({...v, turno:"Mañana"})), ...turnoTarde.ventas.map(v=>({...v, turno:"Tarde"}))];
+        if (desde) todas = todas.filter(v=>v.fecha >= desde);
+        if (hasta) todas = todas.filter(v=>v.fecha <= hasta);
+        if (empleado) todas = todas.filter(v=>v.empleado === empleado);
+        if (turno) todas = todas.filter(v=>v.turno.toLowerCase() === turno.toLowerCase());
+        let csvRows = [["Fecha","Turno","Empleado","Productos","Total","Método"]];
+        todas.forEach(v => {
+            let prodStr = v.productos.map(p => `${p.cantidad}x ${p.nombre}`).join("; ");
+            csvRows.push([v.fecha, v.turno, v.empleado, prodStr, v.total, v.metodo_pago === "nequi" ? "Nequi" : "Efectivo"]);
+        });
+        const csvContent = csvRows.map(row => row.join(",")).join("\n");
+        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `reporte_bareke_${new Date().toISOString().slice(0,19)}.csv`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+        mostrarToast("Reporte exportado a CSV", "success");
+    }
+
+    function imprimirReportes() {
+        if (currentUser?.tipo !== "admin") return;
+        const desde = document.getElementById("filterFechaDesde").value;
+        const hasta = document.getElementById("filterFechaHasta").value;
+        const empleado = document.getElementById("filterEmpleado").value;
+        const turno = document.getElementById("filterTurno").value;
+        let todas = [...turnoManana.ventas.map(v=>({...v, turno:"Mañana"})), ...turnoTarde.ventas.map(v=>({...v, turno:"Tarde"}))];
+        if (desde) todas = todas.filter(v=>v.fecha >= desde);
+        if (hasta) todas = todas.filter(v=>v.fecha <= hasta);
+        if (empleado) todas = todas.filter(v=>v.empleado === empleado);
+        if (turno) todas = todas.filter(v=>v.turno.toLowerCase() === turno.toLowerCase());
+        let win = window.open('', '_blank');
+        let html = `<html><head><title>Reporte Bareke</title><style>body{font-family:sans-serif;} table{border-collapse:collapse;width:100%} th,td{border:1px solid #ccc;padding:8px;}</style></head><body>
+        <h1>Bareke - Reporte de ventas</h1><p>Filtros: Desde ${desde || "inicio"} hasta ${hasta || "hoy"}, Empleado: ${empleado || "todos"}, Turno: ${turno || "todos"}</p>
+        <table><th>Fecha</th><th>Turno</th><th>Empleado</th><th>Productos</th><th>Total</th><th>Método</th></tr>`;
+        todas.forEach(v => {
+            let prodStr = v.productos.map(p => `${p.cantidad}x ${p.nombre}`).join(", ");
+            html += `<tr><td>${v.fecha}</td><td>${v.turno}</td><td>${v.empleado}</td><td>${prodStr}</td><td>${formatearCOP(v.total)}</td><td>${v.metodo_pago === "nequi" ? "Nequi" : "Efectivo"}</td></tr>`;
+        });
+        html += `</table></body></html>`;
+        win.document.write(html);
+        win.document.close();
+        win.print();
+        mostrarToast("Enviando a impresora", "success");
+    }
+
+    function backupManual() {
+        const data = { inventario, cajaTotal, turnoManana, turnoTarde, ventasDiariasHistorial };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `bareke_backup_manual_${new Date().toISOString().slice(0,19)}.json`;
+        link.click();
+        mostrarToast("Backup manual descargado", "success");
+    }
+
+    // ========== ACTUALIZAR UI PRINCIPAL ==========
     async function actualizarReportesConFiltros() {
         if (currentUser?.tipo !== "admin") return;
         const desde = document.getElementById("filterFechaDesde").value;
@@ -577,42 +677,6 @@
         document.getElementById("rankingEmpleadosList").innerHTML = `<ul>${ranking.map(([e,t])=>`<li>👤 ${e}: ${formatearCOP(t)}</li>`).join('')}</ul>`;
     }
 
-    // ========== USUARIOS ==========
-    async function cargarListaUsuarios() {
-        const { data: empleados } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'empleado');
-        const container = document.getElementById("usersList");
-        if (container && empleados) {
-            container.innerHTML = "";
-            empleados.forEach(emp => {
-                const div = document.createElement("div");
-                div.className = "user-item";
-                div.innerHTML = `<span><strong>${emp.id}</strong> - ${emp.nombre}</span><button class="delete-user" data-user="${emp.id}">🗑️ Eliminar</button>`;
-                container.appendChild(div);
-            });
-            document.querySelectorAll('.delete-user').forEach(btn => btn.onclick = async () => {
-                if (confirm(`¿Eliminar usuario ${btn.dataset.user}?`)) {
-                    await supabaseClient.from('usuarios').delete().eq('id', btn.dataset.user);
-                    cargarListaUsuarios();
-                    mostrarToast("Usuario eliminado");
-                }
-            });
-        }
-        const span = document.getElementById("turnosActuales");
-        if (span) span.innerHTML = `🌅 Mañana: ${turnoManana.empleado || "Sin"} | 🌆 Tarde: ${turnoTarde.empleado || "Sin"}`;
-    }
-
-    async function crearNuevoUsuario(username, fullName, password) {
-        username = username.trim().toLowerCase();
-        if (!username || !fullName || !password) { alert("Complete todos los campos"); return false; }
-        const { data: existe } = await supabaseClient.from('usuarios').select('id').eq('id', username);
-        if (existe?.length) { alert("Usuario ya existe"); return false; }
-        await supabaseClient.from('usuarios').insert({ id: username, password, nombre: fullName, tipo: "empleado" });
-        cargarListaUsuarios();
-        mostrarToast("Empleado creado");
-        return true;
-    }
-
-    // ========== ACTUALIZAR UI ==========
     function actualizarUI() {
         const ventasManana = turnoManana.ventas.reduce((s,v)=>s+v.total,0);
         const ventasTarde = turnoTarde.ventas.reduce((s,v)=>s+v.total,0);
@@ -660,11 +724,42 @@
         }
     }
 
-    // ========== EVENTOS E INICIALIZACIÓN ==========
-    document.addEventListener("DOMContentLoaded", () => {
-        console.log("DOM cargado, iniciando eventos...");
+    async function cargarListaUsuarios() {
+        const { data: empleados } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'empleado');
+        const container = document.getElementById("usersList");
+        if (container && empleados) {
+            container.innerHTML = "";
+            empleados.forEach(emp => {
+                const div = document.createElement("div");
+                div.className = "user-item";
+                div.innerHTML = `<span><strong>${emp.id}</strong> - ${emp.nombre}</span><button class="delete-user" data-user="${emp.id}">🗑️ Eliminar</button>`;
+                container.appendChild(div);
+            });
+            document.querySelectorAll('.delete-user').forEach(btn => btn.onclick = async () => {
+                if (confirm(`¿Eliminar usuario ${btn.dataset.user}?`)) {
+                    await supabaseClient.from('usuarios').delete().eq('id', btn.dataset.user);
+                    cargarListaUsuarios();
+                    mostrarToast("Usuario eliminado");
+                }
+            });
+        }
+        const span = document.getElementById("turnosActuales");
+        if (span) span.innerHTML = `🌅 Mañana: ${turnoManana.empleado || "Sin"} | 🌆 Tarde: ${turnoTarde.empleado || "Sin"}`;
+    }
 
-        // === LOGIN ===
+    async function crearNuevoUsuario(username, fullName, password) {
+        username = username.trim().toLowerCase();
+        if (!username || !fullName || !password) { alert("Complete todos los campos"); return false; }
+        const { data: existe } = await supabaseClient.from('usuarios').select('id').eq('id', username);
+        if (existe?.length) { alert("Usuario ya existe"); return false; }
+        await supabaseClient.from('usuarios').insert({ id: username, password, nombre: fullName, tipo: "empleado" });
+        cargarListaUsuarios();
+        mostrarToast("Empleado creado");
+        return true;
+    }
+
+    // ========== INICIALIZACIÓN ==========
+    document.addEventListener("DOMContentLoaded", () => {
         const usernameInput = document.getElementById("loginUsername");
         const passwordInput = document.getElementById("loginPassword");
         const loginBtn = document.getElementById("loginBtn");
@@ -673,53 +768,33 @@
         const morningBtn = document.getElementById("shiftMorningBtn");
         const afternoonBtn = document.getElementById("shiftAfternoonBtn");
         const logoutBtn = document.getElementById("logoutBtn");
-
-        // Mostrar/ocultar selector de turno
-        usernameInput.addEventListener("input", () => {
-            const isAdmin = usernameInput.value.trim().toLowerCase() === "admin";
-            shiftDiv.style.display = isAdmin ? "none" : "block";
-        });
-
-        // Selección de turno
         let selectedShift = null;
         function updateShiftButtons() {
             morningBtn.classList.toggle("selected", selectedShift === "manana");
             afternoonBtn.classList.toggle("selected", selectedShift === "tarde");
         }
-        morningBtn.addEventListener("click", () => { selectedShift = "manana"; updateShiftButtons(); });
-        afternoonBtn.addEventListener("click", () => { selectedShift = "tarde"; updateShiftButtons(); });
-
-        // Botones de ojo
+        morningBtn.onclick = () => { selectedShift = "manana"; updateShiftButtons(); };
+        afternoonBtn.onclick = () => { selectedShift = "tarde"; updateShiftButtons(); };
+        usernameInput.addEventListener("input", () => {
+            shiftDiv.style.display = usernameInput.value.toLowerCase() === "admin" ? "none" : "block";
+        });
         document.querySelectorAll('.toggle-password').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const target = document.getElementById(btn.getAttribute('data-target'));
                 if (target) target.type = target.type === "password" ? "text" : "password";
             });
         });
-
-        // Login
-        loginBtn.addEventListener("click", async () => {
+        loginBtn.onclick = async () => {
             const username = usernameInput.value.trim().toLowerCase();
             const password = passwordInput.value;
             errorDiv.innerText = "";
-            if (!username || !password) {
-                errorDiv.innerText = "❌ Ingresa usuario y contraseña";
-                return;
-            }
-
+            if (!username || !password) { errorDiv.innerText = "❌ Ingresa usuario y contraseña"; return; }
             try {
                 const { data, error } = await supabaseClient.from('usuarios').select('*').eq('id', username);
                 if (error) throw error;
-                if (!data || data.length === 0) {
-                    errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
-                    return;
-                }
+                if (!data || data.length === 0) { errorDiv.innerText = "❌ Usuario o contraseña incorrectos"; return; }
                 const user = data[0];
-                if (user.password !== password) {
-                    errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
-                    return;
-                }
-
+                if (user.password !== password) { errorDiv.innerText = "❌ Usuario o contraseña incorrectos"; return; }
                 if (user.tipo === "admin") {
                     currentUser = { tipo: "admin", nombre: user.nombre, id: username };
                     currentShift = null;
@@ -729,10 +804,7 @@
                     await cargarDatosSupabase();
                     iniciarRealtime();
                 } else {
-                    if (!selectedShift) {
-                        errorDiv.innerText = "❌ Selecciona un turno (Mañana o Tarde)";
-                        return;
-                    }
+                    if (!selectedShift) { errorDiv.innerText = "❌ Selecciona un turno (Mañana o Tarde)"; return; }
                     await supabaseClient.from('turnos').upsert({ id: selectedShift, empleado: user.nombre, ultima_actualizacion: new Date().toISOString() });
                     currentUser = { tipo: "empleado", nombre: user.nombre, id: username };
                     currentShift = selectedShift;
@@ -742,153 +814,41 @@
                     await cargarDatosSupabase();
                     iniciarRealtime();
                 }
-            } catch (err) {
-                console.error(err);
-                errorDiv.innerText = "❌ Error de conexión. Verifica que RLS esté deshabilitado.";
-            }
-        });
-
-        // Logout
-        logoutBtn.addEventListener("click", () => {
+            } catch (err) { errorDiv.innerText = "❌ Error de conexión"; }
+        };
+        logoutBtn.onclick = () => {
             detenerRealtime();
-            currentUser = null;
-            currentShift = null;
-            cart = [];
+            currentUser = null; currentShift = null; cart = [];
             document.getElementById("loginUsername").value = "";
             document.getElementById("loginPassword").value = "";
             document.getElementById("loginError").innerText = "";
             document.getElementById("loginScreen").style.display = "flex";
             document.getElementById("mainApp").style.display = "none";
             actualizarCarritoUI();
-        });
-
-        // === EVENTOS DEL CARRITO Y DEL SISTEMA ===
-        document.getElementById("btnAddToCart")?.addEventListener("click", () => {
-            const prodId = parseInt(document.getElementById("cartProductSelect").value);
-            const cantidad = parseInt(document.getElementById("cartCantidad").value);
-            agregarAlCarrito(prodId, cantidad);
-            document.getElementById("cartCantidad").value = 1;
-        });
+        };
+        document.getElementById("btnAddToCart").onclick = () => { playTap(); let prodId=parseInt(document.getElementById("cartProductSelect").value); let cant=parseInt(document.getElementById("cartCantidad").value); agregarAlCarrito(prodId, cant); document.getElementById("cartCantidad").value=1; };
         document.getElementById("btnConfirmarVenta").onclick = confirmarVenta;
         document.getElementById("btnLimpiarCarrito").onclick = limpiarCarrito;
-        document.getElementById("btnAgregarGasto").onclick = async () => {
-            const concepto = document.getElementById("gastoConcepto").value;
-            const valor = parseInt(document.getElementById("gastoValor").value);
-            if (concepto && valor) await registrarGasto(concepto, valor);
-            document.getElementById("gastoConcepto").value = "";
-            document.getElementById("gastoValor").value = "";
-        };
+        document.getElementById("btnAgregarGasto").onclick = async () => { let c=document.getElementById("gastoConcepto").value; let v=parseInt(document.getElementById("gastoValor").value); if(c&&v) await registrarGasto(c,v); document.getElementById("gastoConcepto").value=""; document.getElementById("gastoValor").value=""; };
         document.getElementById("montoRecibido").addEventListener("input", calcularCambio);
-        document.querySelectorAll('input[name="metodoPagoCarrito"]').forEach(r => r.addEventListener("change", calcularCambio));
-        document.getElementById("btnQuickAdd1").onclick = () => {
-            const select = document.getElementById("cartProductSelect");
-            if (select && select.value) agregarAlCarrito(parseInt(select.value), 1);
-        };
-        document.getElementById("btnQuickAdd2").onclick = () => {
-            const select = document.getElementById("cartProductSelect");
-            if (select && select.value) agregarAlCarrito(parseInt(select.value), 2);
-        };
+        document.querySelectorAll('input[name="metodoPagoCarrito"]').forEach(r=>r.addEventListener("change", calcularCambio));
+        document.getElementById("btnQuickAdd1").onclick = () => { let sel=document.getElementById("cartProductSelect"); if(sel&&sel.value) agregarAlCarrito(parseInt(sel.value),1); };
+        document.getElementById("btnQuickAdd2").onclick = () => { let sel=document.getElementById("cartProductSelect"); if(sel&&sel.value) agregarAlCarrito(parseInt(sel.value),2); };
         document.getElementById("productSearch").addEventListener("input", renderPOS);
-
-        // Admin events
-        document.getElementById("btnNuevoDia").onclick = async () => {
-            if (confirm("¿Reiniciar ventas y gastos de ambos turnos?")) {
-                await supabaseClient.from('ventas').delete().neq('id', 0);
-                await supabaseClient.from('gastos').delete().neq('id', 0);
-                await cargarDatosSupabase();
-                mostrarToast("Nuevo día iniciado");
-            }
-        };
-        document.getElementById("btnExportar").onclick = () => {
-            const data = { inventario, cajaTotal, turnoManana, turnoTarde, ventasDiariasHistorial };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `bareke_backup_${new Date().toISOString().slice(0,19)}.json`;
-            a.click();
-            mostrarToast("Respaldo creado");
-        };
+        document.getElementById("btnNuevoDia").onclick = async () => { if(confirm("¿Reiniciar ventas?")){ await supabaseClient.from('ventas').delete().neq('id',0); await supabaseClient.from('gastos').delete().neq('id',0); await cargarDatosSupabase(); mostrarToast("Nuevo día iniciado"); } };
+        document.getElementById("btnExportar").onclick = () => { const data={inventario,cajaTotal,turnoManana,turnoTarde,ventasDiariasHistorial}; const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`bareke_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); mostrarToast("Respaldo creado"); };
         document.getElementById("btnImportar").onclick = () => document.getElementById("importFile").click();
-        document.getElementById("importFile").onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async (ev) => {
-                try {
-                    const data = JSON.parse(ev.target.result);
-                    inventario = data.inventario;
-                    cajaTotal = data.cajaTotal;
-                    turnoManana = data.turnoManana;
-                    turnoTarde = data.turnoTarde;
-                    ventasDiariasHistorial = data.ventasDiariasHistorial;
-                    await supabaseClient.from('productos').upsert(inventario);
-                    await supabaseClient.from('caja').insert({ total: cajaTotal });
-                    await supabaseClient.from('turnos').upsert([{ id: "manana", empleado: turnoManana.empleado }, { id: "tarde", empleado: turnoTarde.empleado }]);
-                    await cargarDatosSupabase();
-                    mostrarToast("Respaldo importado");
-                } catch (err) { alert("Archivo inválido"); }
-            };
-            reader.readAsText(file);
-        };
-        document.getElementById("btnModificarCaja").onclick = async () => {
-            let nuevo = parseInt(document.getElementById("adminSetCaja").value);
-            if (!isNaN(nuevo) && nuevo >= 0) {
-                cajaTotal = nuevo;
-                await guardarCaja();
-                await cargarDatosSupabase();
-                mostrarToast("Caja actualizada");
-            } else alert("Valor inválido");
-        };
-        document.getElementById("btnAgregarProducto").onclick = async () => {
-            let nom = document.getElementById("newProdNombre").value.trim();
-            let prec = parseInt(document.getElementById("newProdPrecio").value);
-            let stock = parseInt(document.getElementById("newProdStock").value);
-            if (!nom || isNaN(prec) || isNaN(stock)) { alert("Complete todos los campos"); return; }
-            await agregarProducto(nom, prec, stock);
-            await cargarDatosSupabase();
-            document.getElementById("newProdNombre").value = "";
-            document.getElementById("newProdPrecio").value = "";
-            document.getElementById("newProdStock").value = "";
-            mostrarToast("Producto agregado");
-        };
-        document.getElementById("btnCreateUser").onclick = async () => {
-            const u = document.getElementById("newUsername").value;
-            const n = document.getElementById("newFullName").value;
-            const p = document.getElementById("newPassword").value;
-            await crearNuevoUsuario(u, n, p);
-            document.getElementById("newUsername").value = "";
-            document.getElementById("newFullName").value = "";
-            document.getElementById("newPassword").value = "";
-        };
-        document.getElementById("btnSaveAdminProfile").onclick = async () => {
-            const nu = document.getElementById("adminNewUsername").value.trim().toLowerCase();
-            const nd = document.getElementById("adminNewDisplayName").value.trim();
-            const np = document.getElementById("adminNewPassword").value;
-            const cp = document.getElementById("adminConfirmPassword").value;
-            if (!nu || !nd) { alert("Complete campos"); return; }
-            if (np !== cp) { alert("Contraseñas no coinciden"); return; }
-            if (nu !== "admin") await supabaseClient.from('usuarios').delete().eq('id', 'admin');
-            await supabaseClient.from('usuarios').upsert({ id: nu, password: np || "admin123", nombre: nd, tipo: "admin" });
-            if (currentUser?.id === "admin") currentUser.nombre = nd;
-            mostrarToast("Perfil actualizado");
-            document.getElementById("adminNewPassword").value = "";
-            document.getElementById("adminConfirmPassword").value = "";
-        };
+        document.getElementById("importFile").onchange = async (e) => { const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=async(ev)=>{ try{ const data=JSON.parse(ev.target.result); inventario=data.inventario; cajaTotal=data.cajaTotal; turnoManana=data.turnoManana; turnoTarde=data.turnoTarde; ventasDiariasHistorial=data.ventasDiariasHistorial; await supabaseClient.from('productos').upsert(inventario); await supabaseClient.from('caja').insert({total:cajaTotal}); await supabaseClient.from('turnos').upsert([{id:"manana",empleado:turnoManana.empleado},{id:"tarde",empleado:turnoTarde.empleado}]); await cargarDatosSupabase(); mostrarToast("Respaldo importado"); }catch(err){ alert("Archivo inválido"); } }; reader.readAsText(file); };
+        document.getElementById("btnModificarCaja").onclick = async () => { let nuevo=parseInt(document.getElementById("adminSetCaja").value); if(!isNaN(nuevo)&&nuevo>=0){ cajaTotal=nuevo; await guardarCaja(); await cargarDatosSupabase(); mostrarToast("Caja actualizada"); } else alert("Valor inválido"); };
+        document.getElementById("btnAgregarProducto").onclick = async () => { let nom=document.getElementById("newProdNombre").value.trim(); let prec=parseInt(document.getElementById("newProdPrecio").value); let stock=parseInt(document.getElementById("newProdStock").value); if(!nom||isNaN(prec)||isNaN(stock)){ alert("Complete"); return; } await agregarProducto(nom,prec,stock); await cargarDatosSupabase(); document.getElementById("newProdNombre").value=""; document.getElementById("newProdPrecio").value=""; document.getElementById("newProdStock").value=""; mostrarToast("Producto agregado"); };
+        document.getElementById("btnCreateUser").onclick = async () => { await crearNuevoUsuario(document.getElementById("newUsername").value, document.getElementById("newFullName").value, document.getElementById("newPassword").value); document.getElementById("newUsername").value=""; document.getElementById("newFullName").value=""; document.getElementById("newPassword").value=""; };
+        document.getElementById("btnSaveAdminProfile").onclick = async () => { const nu=document.getElementById("adminNewUsername").value.trim().toLowerCase(); const nd=document.getElementById("adminNewDisplayName").value.trim(); const np=document.getElementById("adminNewPassword").value; const cp=document.getElementById("adminConfirmPassword").value; if(!nu||!nd){ alert("Complete campos"); return; } if(np!==cp){ alert("Contraseñas no coinciden"); return; } if(nu!=="admin") await supabaseClient.from('usuarios').delete().eq('id','admin'); await supabaseClient.from('usuarios').upsert({id:nu, password:np||"admin123", nombre:nd, tipo:"admin"}); if(currentUser?.id==="admin") currentUser.nombre=nd; mostrarToast("Perfil actualizado"); document.getElementById("adminNewPassword").value=""; document.getElementById("adminConfirmPassword").value=""; };
         document.getElementById("btnAplicarFiltros").onclick = () => actualizarReportesConFiltros();
-        document.getElementById("btnExportCSV").onclick = () => alert("Función CSV disponible");
-        document.getElementById("btnPrintPDF").onclick = () => alert("Función PDF disponible");
-        document.getElementById("btnBackupManual").onclick = () => {
-            const data = { inventario, cajaTotal, turnoManana, turnoTarde, ventasDiariasHistorial };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = `bareke_manual_${new Date().toISOString().slice(0,19)}.json`;
-            a.click();
-            mostrarToast("Backup manual descargado");
-        };
+        document.getElementById("btnExportCSV").onclick = exportarCSV;
+        document.getElementById("btnPrintPDF").onclick = imprimirReportes;
+        document.getElementById("btnBackupManual").onclick = backupManual;
         document.getElementById("btnSaveEdit").onclick = guardarEdicionProducto;
         document.getElementById("btnCancelEdit").onclick = () => document.getElementById("editProductModal").style.display = "none";
-
         actualizarCarritoUI();
     });
 </script>
