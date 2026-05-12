@@ -61,7 +61,7 @@
 </head>
 <body>
 
-<!-- ==================== PANTALLA LOGIN ==================== -->
+<!-- PANTALLA LOGIN -->
 <div id="loginScreen" class="login-screen">
     <div class="login-card">
         <h2>BAREKE</h2>
@@ -85,7 +85,7 @@
     </div>
 </div>
 
-<!-- ==================== DASHBOARD PRINCIPAL ==================== -->
+<!-- APLICACIÓN PRINCIPAL -->
 <div id="mainApp" style="display: none;">
     <div class="dashboard">
         <div class="hero">
@@ -97,7 +97,6 @@
             <button class="logout-btn" id="logoutBtn">🚪 Salir</button>
         </div>
 
-        <!-- Tarjetas globales -->
         <div class="stats-grid">
             <div class="stat-card"><div class="stat-title">💰 CAJA TOTAL</div><div class="stat-value" id="totalMoney">$0</div></div>
             <div class="stat-card"><div class="stat-title">📈 VENTAS HOY</div><div class="stat-value" id="totalVentasHoy">$0</div></div>
@@ -105,7 +104,6 @@
             <div class="stat-card"><div class="stat-title">📉 GASTOS HOY</div><div class="stat-value" id="totalGastosHoy">$0</div></div>
         </div>
 
-        <!-- POS + CARRITO -->
         <div class="sales-layout">
             <div class="pos-panel">
                 <h2>🛒 PUNTO DE VENTA (POS)</h2>
@@ -155,7 +153,6 @@
             </div>
         </div>
 
-        <!-- Reportes (solo admin) -->
         <div id="adminReports" class="admin-section" style="display: none;">
             <h2>📊 REPORTES Y ANÁLISIS</h2>
             <div class="filter-group">
@@ -177,7 +174,6 @@
             </div>
         </div>
 
-        <!-- Admin Panel -->
         <div id="adminPanel" class="admin-section" style="display: none;">
             <h2>⚙️ ADMINISTRACIÓN <span id="turnosActuales" class="turno-actual"></span></h2>
             <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
@@ -246,10 +242,10 @@
 </div>
 
 <script>
-    // ==================== CONFIGURACIÓN SUPABASE ====================
+    // ==================== SUPABASE CLIENTE (evita conflicto de nombre) ====================
     const SUPABASE_URL = "https://xgnwcurixdsntafchbmn.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhnbndjdXJpeGRzbnRhZmNoYm1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1MDY3ODUsImV4cCI6MjA5NDA4Mjc4NX0.sW-fYAUPMVUDL_ztX8Wu6JtChha5-sUCHIUwKFWGnAY";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     // Variables globales
     let currentUser = null;
@@ -281,31 +277,31 @@
     // ========== FUNCIONES SUPABASE ==========
     async function cargarDatosSupabase() {
         try {
-            const { data: productos, error: errProd } = await supabase.from('productos').select('*');
+            const { data: productos, error: errProd } = await supabaseClient.from('productos').select('*');
             if (errProd) throw errProd;
             inventario = productos || [];
 
-            const { data: cajaData, error: errCaja } = await supabase.from('caja').select('total').order('id', { ascending: false }).limit(1);
+            const { data: cajaData, error: errCaja } = await supabaseClient.from('caja').select('total').order('id', { ascending: false }).limit(1);
             if (errCaja) throw errCaja;
             cajaTotal = (cajaData && cajaData[0]) ? cajaData[0].total : 280000;
 
-            const { data: turnosData, error: errTurnos } = await supabase.from('turnos').select('*');
+            const { data: turnosData, error: errTurnos } = await supabaseClient.from('turnos').select('*');
             if (errTurnos) throw errTurnos;
             turnoManana.empleado = turnosData?.find(t => t.id === 'manana')?.empleado || null;
             turnoTarde.empleado = turnosData?.find(t => t.id === 'tarde')?.empleado || null;
 
             const hoy = new Date().toISOString().slice(0,10);
-            const { data: ventasHoy, error: errVentas } = await supabase.from('ventas').select('*').eq('fecha', hoy);
+            const { data: ventasHoy, error: errVentas } = await supabaseClient.from('ventas').select('*').eq('fecha', hoy);
             if (errVentas) throw errVentas;
             turnoManana.ventas = ventasHoy?.filter(v => v.turno_id === 'manana') || [];
             turnoTarde.ventas = ventasHoy?.filter(v => v.turno_id === 'tarde') || [];
 
-            const { data: gastosHoy, error: errGastos } = await supabase.from('gastos').select('*').eq('fecha', hoy);
+            const { data: gastosHoy, error: errGastos } = await supabaseClient.from('gastos').select('*').eq('fecha', hoy);
             if (errGastos) throw errGastos;
             turnoManana.gastos = gastosHoy?.filter(g => g.turno_id === 'manana') || [];
             turnoTarde.gastos = gastosHoy?.filter(g => g.turno_id === 'tarde') || [];
 
-            const { data: historial, error: errHist } = await supabase.from('historial_ventas').select('*').order('fecha', { ascending: true }).limit(7);
+            const { data: historial, error: errHist } = await supabaseClient.from('historial_ventas').select('*').order('fecha', { ascending: true }).limit(7);
             if (errHist) throw errHist;
             ventasDiariasHistorial = historial || [];
 
@@ -317,11 +313,11 @@
     }
 
     async function guardarCaja() {
-        await supabase.from('caja').insert({ total: cajaTotal });
+        await supabaseClient.from('caja').insert({ total: cajaTotal });
     }
 
     async function guardarVenta(venta, turnoId) {
-        await supabase.from('ventas').insert({
+        await supabaseClient.from('ventas').insert({
             turno_id: turnoId,
             productos: venta.productos,
             total: venta.total,
@@ -333,7 +329,7 @@
     }
 
     async function guardarGasto(gasto, turnoId) {
-        await supabase.from('gastos').insert({
+        await supabaseClient.from('gastos').insert({
             turno_id: turnoId,
             concepto: gasto.concepto,
             valor: gasto.valor,
@@ -344,30 +340,29 @@
     }
 
     async function actualizarProducto(producto) {
-        await supabase.from('productos').update({ nombre: producto.nombre, precio: producto.precio, cantidad: producto.cantidad }).eq('id', producto.id);
+        await supabaseClient.from('productos').update({ nombre: producto.nombre, precio: producto.precio, cantidad: producto.cantidad }).eq('id', producto.id);
     }
 
     async function agregarProducto(nombre, precio, cantidad) {
-        await supabase.from('productos').insert({ nombre, precio, cantidad });
+        await supabaseClient.from('productos').insert({ nombre, precio, cantidad });
     }
 
     // ========== REALTIME ==========
     function iniciarRealtime() {
-        if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-        realtimeChannel = supabase.channel('realtime-bareke')
+        if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
+        realtimeChannel = supabaseClient.channel('realtime-bareke')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ventas' }, () => cargarDatosSupabase())
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'gastos' }, () => cargarDatosSupabase())
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'productos' }, () => cargarDatosSupabase())
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'caja' }, () => cargarDatosSupabase())
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'turnos' }, () => cargarDatosSupabase())
             .subscribe((status) => {
-                if (status === 'SUBSCRIBED') console.log('Realtime activo');
-                else console.log('Realtime status:', status);
+                console.log('Realtime status:', status);
             });
     }
 
     function detenerRealtime() {
-        if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+        if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
         realtimeChannel = null;
     }
 
@@ -464,7 +459,6 @@
         limpiarCarrito();
         document.getElementById("montoRecibido").value = "";
         mostrarToast(`Venta registrada: ${formatearCOP(total)} (${metodo==="nequi"?"Nequi":"Efectivo"})`);
-        // No es necesario recargar manualmente, Realtime lo hará
     }
 
     async function registrarGasto(concepto, valor) {
@@ -549,7 +543,7 @@
         const precio = parseInt(document.getElementById("editProductPrecio").value);
         const cantidad = parseInt(document.getElementById("editProductStock").value);
         if (!nombre || isNaN(precio) || isNaN(cantidad)) { alert("Completa todos los campos"); return; }
-        await supabase.from('productos').update({ nombre, precio, cantidad }).eq('id', id);
+        await supabaseClient.from('productos').update({ nombre, precio, cantidad }).eq('id', id);
         document.getElementById("editProductModal").style.display = "none";
         mostrarToast("Producto actualizado");
     }
@@ -585,7 +579,7 @@
 
     // ========== USUARIOS ==========
     async function cargarListaUsuarios() {
-        const { data: empleados } = await supabase.from('usuarios').select('*').eq('tipo', 'empleado');
+        const { data: empleados } = await supabaseClient.from('usuarios').select('*').eq('tipo', 'empleado');
         const container = document.getElementById("usersList");
         if (container && empleados) {
             container.innerHTML = "";
@@ -597,7 +591,7 @@
             });
             document.querySelectorAll('.delete-user').forEach(btn => btn.onclick = async () => {
                 if (confirm(`¿Eliminar usuario ${btn.dataset.user}?`)) {
-                    await supabase.from('usuarios').delete().eq('id', btn.dataset.user);
+                    await supabaseClient.from('usuarios').delete().eq('id', btn.dataset.user);
                     cargarListaUsuarios();
                     mostrarToast("Usuario eliminado");
                 }
@@ -610,9 +604,9 @@
     async function crearNuevoUsuario(username, fullName, password) {
         username = username.trim().toLowerCase();
         if (!username || !fullName || !password) { alert("Complete todos los campos"); return false; }
-        const { data: existe } = await supabase.from('usuarios').select('id').eq('id', username);
+        const { data: existe } = await supabaseClient.from('usuarios').select('id').eq('id', username);
         if (existe?.length) { alert("Usuario ya existe"); return false; }
-        await supabase.from('usuarios').insert({ id: username, password, nombre: fullName, tipo: "empleado" });
+        await supabaseClient.from('usuarios').insert({ id: username, password, nombre: fullName, tipo: "empleado" });
         cargarListaUsuarios();
         mostrarToast("Empleado creado");
         return true;
@@ -714,7 +708,7 @@
             }
 
             try {
-                const { data, error } = await supabase.from('usuarios').select('*').eq('id', username);
+                const { data, error } = await supabaseClient.from('usuarios').select('*').eq('id', username);
                 if (error) throw error;
                 if (!data || data.length === 0) {
                     errorDiv.innerText = "❌ Usuario o contraseña incorrectos";
@@ -739,7 +733,7 @@
                         errorDiv.innerText = "❌ Selecciona un turno (Mañana o Tarde)";
                         return;
                     }
-                    await supabase.from('turnos').upsert({ id: selectedShift, empleado: user.nombre, ultima_actualizacion: new Date().toISOString() });
+                    await supabaseClient.from('turnos').upsert({ id: selectedShift, empleado: user.nombre, ultima_actualizacion: new Date().toISOString() });
                     currentUser = { tipo: "empleado", nombre: user.nombre, id: username };
                     currentShift = selectedShift;
                     document.getElementById("loginScreen").style.display = "none";
@@ -799,8 +793,8 @@
         // Admin events
         document.getElementById("btnNuevoDia").onclick = async () => {
             if (confirm("¿Reiniciar ventas y gastos de ambos turnos?")) {
-                await supabase.from('ventas').delete().neq('id', 0);
-                await supabase.from('gastos').delete().neq('id', 0);
+                await supabaseClient.from('ventas').delete().neq('id', 0);
+                await supabaseClient.from('gastos').delete().neq('id', 0);
                 await cargarDatosSupabase();
                 mostrarToast("Nuevo día iniciado");
             }
@@ -827,9 +821,9 @@
                     turnoManana = data.turnoManana;
                     turnoTarde = data.turnoTarde;
                     ventasDiariasHistorial = data.ventasDiariasHistorial;
-                    await supabase.from('productos').upsert(inventario);
-                    await supabase.from('caja').insert({ total: cajaTotal });
-                    await supabase.from('turnos').upsert([{ id: "manana", empleado: turnoManana.empleado }, { id: "tarde", empleado: turnoTarde.empleado }]);
+                    await supabaseClient.from('productos').upsert(inventario);
+                    await supabaseClient.from('caja').insert({ total: cajaTotal });
+                    await supabaseClient.from('turnos').upsert([{ id: "manana", empleado: turnoManana.empleado }, { id: "tarde", empleado: turnoTarde.empleado }]);
                     await cargarDatosSupabase();
                     mostrarToast("Respaldo importado");
                 } catch (err) { alert("Archivo inválido"); }
@@ -873,8 +867,8 @@
             const cp = document.getElementById("adminConfirmPassword").value;
             if (!nu || !nd) { alert("Complete campos"); return; }
             if (np !== cp) { alert("Contraseñas no coinciden"); return; }
-            if (nu !== "admin") await supabase.from('usuarios').delete().eq('id', 'admin');
-            await supabase.from('usuarios').upsert({ id: nu, password: np || "admin123", nombre: nd, tipo: "admin" });
+            if (nu !== "admin") await supabaseClient.from('usuarios').delete().eq('id', 'admin');
+            await supabaseClient.from('usuarios').upsert({ id: nu, password: np || "admin123", nombre: nd, tipo: "admin" });
             if (currentUser?.id === "admin") currentUser.nombre = nd;
             mostrarToast("Perfil actualizado");
             document.getElementById("adminNewPassword").value = "";
